@@ -1,0 +1,15 @@
+__pycache__
+.venv
+data/bronze_dataset/*
+src/*.egg-info/*
+test/*
+data/local/*
+data/silver_dataset/*
+data/gold_dataset/*
+data/other_dataset/*
+experiment/*
+config/params_*.json
+testing_data/*
+eda/*
+log/*
+!.gitkeep
