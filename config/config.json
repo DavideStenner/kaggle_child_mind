@@ -1,0 +1,11 @@
+{
+    "PATH_BRONZE_DATA": "data/bronze_dataset",
+    "PATH_SILVER_DATA": "data/silver_dataset",
+    "PATH_GOLD_DATA": "data/gold_dataset",
+    "PATH_MAPPER_DATA": "data/mapper_dataset",
+    "PATH_OTHER_DATA": "data/other_dataset",
+    "PATH_TESTING_DATA": "testing_data",
+    "PATH_EXPERIMENT": "experiment",
+    "N_FOLD": 5,
+    "LOG_FOLDER": "log"
+}

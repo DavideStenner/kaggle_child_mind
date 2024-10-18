@@ -1,0 +1,15 @@
+setuptools
+numpy
+pandas
+matplotlib
+lightgbm
+tqdm
+plotly
+pyarrow
+polars
+seaborn
+ipywidgets
+xgboost
+openpyxl
+kaggle
+scikit-learn
