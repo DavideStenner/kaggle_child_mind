@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -8,6 +9,8 @@ from typing import Dict
 from sklearn.model_selection import StratifiedKFold, GroupKFold, StratifiedGroupKFold
 from src.base.preprocess.cv_fold import BaseCVFold
 from src.preprocess.initialize import PreprocessInit
+
+warnings.simplefilter("ignore", UserWarning)
 
 class PreprocessFoldCreator(BaseCVFold, PreprocessInit):       
     def __create_fold_from_mapper(
@@ -65,7 +68,7 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
                 self.id_col,
                 (
                     pl.col('Basic_Demos-Age').cast(pl.Utf8) +
-                    pl.col('Basic_Demos-').cast(pl.Utf8) +
+                    pl.col('Basic_Demos-Sex').cast(pl.Utf8) +
                     pl.col('sii').cast(pl.Utf8)
                 ).alias('slice')
             )

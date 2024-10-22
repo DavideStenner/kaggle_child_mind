@@ -10,6 +10,7 @@ class PreprocessImport(BaseImport, PreprocessInit):
             pl.scan_csv(
                 os.path.join(
                     self.config_dict['PATH_BRONZE_DATA'],
+                    self.config_dict['ORIGINAL_DATA_FOLDER'],
                     'train.csv'
                 )
             )
