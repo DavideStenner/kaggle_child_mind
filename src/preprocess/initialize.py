@@ -36,8 +36,10 @@ class PreprocessInit(BaseInit):
     def _initialize_col_info(self) -> None:
         self.target: str = self.config_dict['COLUMN_INFO']['TARGET']
         self.string_mapper: dict[str, dict[str, int]] = import_json(
-            self.config_dict['PATH_MAPPER_DATA'],
-            "mapper_category.json"
+            os.path.join(
+                self.config_dict['PATH_MAPPER_DATA'],
+                "mapper_category.json"
+            )
         )
         
     def _initialize_empty_dataset(self) -> None:
