@@ -6,6 +6,7 @@ from typing import Any, Union
 
 from src.utils.logging_utils import get_logger
 from src.base.preprocess.initialize import BaseInit
+from src.utils.import_utils import import_json
 
 class PreprocessInit(BaseInit):
     def __init__(self, 
@@ -33,7 +34,11 @@ class PreprocessInit(BaseInit):
         self.preprocess_logger: logging.Logger = get_logger('preprocess.txt')
                 
     def _initialize_col_info(self) -> None:
-        self.target = self.config_dict['COLUMN_INFO']['TARGET']
+        self.target: str = self.config_dict['COLUMN_INFO']['TARGET']
+        self.string_mapper: dict[str, dict[str, int]] = import_json(
+            self.config_dict['PATH_MAPPER_DATA'],
+            "mapper_category.json"
+        )
         
     def _initialize_empty_dataset(self) -> None:
         self.base_data: Union[pl.LazyFrame, pl.DataFrame]

@@ -1,0 +1,64 @@
+{
+    "main": {
+        "Basic_Demos-Enroll_Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "CGAS-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "Physical-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "Fitness_Endurance-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "FGC-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "BIA-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "PAQ_A-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "PAQ_C-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "SDS-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        },
+        "PreInt_EduHx-Season": {
+            "Spring": 0,
+            "Summer": 1,
+            "Fall": 2,
+            "Winter": 3
+        }
+    }
+}
