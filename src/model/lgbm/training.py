@@ -57,7 +57,7 @@ class LgbmTrainer(ModelTrain, LgbmInit):
         callbacks_list = [
             lgb.record_evaluation(progress),
             lgb.log_evaluation(
-                period=50, 
+                period=100, 
                 show_stdv=False
             )
         ]
