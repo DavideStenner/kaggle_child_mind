@@ -39,19 +39,6 @@ class PreprocessPipeline(BasePipeline, PreprocessImport, PreprocessAddFeature, P
     def collect_all(self) -> None:
         self.collect_feature()
         
-    @property
-    def feature_list(self) -> Tuple[str]:
-        self.import_all()
-        self.create_feature()
-
-        self.merge_all()
-
-        data_columns = self._get_col_name(self.data)
-        
-        #reset dataset
-        self.import_all()
-        
-        return data_columns
         
     def preprocess_inference(self) -> None:
         self.preprocess_logger.info('Creating feature')
@@ -98,9 +85,6 @@ class PreprocessPipeline(BasePipeline, PreprocessImport, PreprocessAddFeature, P
         
         self.save_data()
                 
-    def begin_training(self) -> None:
-        self.import_all()
-        
     def begin_inference(self) -> None:
         self.preprocess_logger.info('beginning preprocessing inference dataset')
         
