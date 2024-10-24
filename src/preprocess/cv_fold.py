@@ -10,8 +10,6 @@ from sklearn.model_selection import StratifiedKFold, GroupKFold, StratifiedGroup
 from src.base.preprocess.cv_fold import BaseCVFold
 from src.preprocess.initialize import PreprocessInit
 
-warnings.simplefilter("ignore", UserWarning)
-
 class PreprocessFoldCreator(BaseCVFold, PreprocessInit):       
     def __create_fold_from_mapper(
             self, 
@@ -54,20 +52,11 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
             self.data
             .select(
                 self.id_col, 
-                (
-                    pl.when(pl.col('Basic_Demos-Age')<=10).then(0)
-                    .when(pl.col('Basic_Demos-Age')<=13).then(1)
-                    .when(pl.col('Basic_Demos-Age')<=18).then(2)
-                    .when(pl.col('Basic_Demos-Age')<=100).then(3)
-                    .otherwise(4)
-                    .alias('Basic_Demos-Age')
-                ),
                 'Basic_Demos-Sex', 'sii',
             )
             .select(
                 self.id_col,
                 (
-                    pl.col('Basic_Demos-Age').cast(pl.Utf8) +
                     pl.col('Basic_Demos-Sex').cast(pl.Utf8) +
                     pl.col('sii').cast(pl.Utf8)
                 ).alias('slice')
