@@ -9,6 +9,7 @@ from typing import Tuple, Dict
 
 from src.base.model.training import ModelTrain
 from src.model.lgbm.initialize import LgbmInit
+from src.model.metric.official_metric import lgb_quadratic_kappa
 
 class LgbmTrainer(ModelTrain, LgbmInit):
     def _init_train(self) -> None:
@@ -71,6 +72,7 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             valid_sets=[test_matrix],
             valid_names=['valid'],
             callbacks=callbacks_list,
+            feval=lgb_quadratic_kappa
         )
 
         model.save_model(
