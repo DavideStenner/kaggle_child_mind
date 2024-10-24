@@ -14,7 +14,7 @@ class LgbmInit(ModelInit):
     def __init__(self, 
             experiment_name:str, 
             params_lgb: dict[str, Any],
-            config_dict: dict[str, Any], data_columns: Tuple[str],
+            config_dict: dict[str, Any],
             fold_name: str = 'fold_info'
         ):
         self.inference: bool = False
@@ -60,23 +60,23 @@ class LgbmInit(ModelInit):
         
         self.feature_list: list[str] = []
         
-        self.get_categorical_columns(data_columns=data_columns)
+        self.get_categorical_columns()
         self.initialize_model_utils()
         self.get_model_file_name_dict()
         self.get_col_list()
         
     def get_col_list(self) -> None:
-        self.special_column_list: list[str] = self.config_dict['SPECIAL_COLUMNS']
 
         self.useless_col_list: list[str] = (
-            self.special_column_list +
+            self.config_dict['COLUMN_INFO']['SPECIAL_COLUMNS'] +
+            self.config_dict['COLUMN_INFO']['ORIGINAL_TARGET_LIST'] +
             [self.id_row] +
-            self.config_dict['COLUMN_INFO']['TARGET'] +
+            [self.config_dict['COLUMN_INFO']['TARGET']] +
             [
                 'fold_info', 'current_fold'
             ]
         )
-        self.target_col: str = self.config_dict['TARGET_DICT']['target']
+        self.target_col: str = self.config_dict['COLUMN_INFO']['TARGET']
         
 
     def initialize_logger(self) -> None:
@@ -102,10 +102,10 @@ class LgbmInit(ModelInit):
                     
     def get_categorical_columns(self) -> None:
         #load all possible categorical feature
-        self.categorical_col_list: list[str] = (
+        self.categorical_col_list: list[str] = [
             self.config_dict['COLUMN_INFO']['STRING_FEATURE'] +
             self.config_dict['COLUMN_INFO']['CATEGORICAL_FEATURE']
-        )
+        ]
         
     def create_experiment_structure(self) -> None:
         if not os.path.isdir(self.experiment_path):

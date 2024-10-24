@@ -23,9 +23,11 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             col for col in data.collect_schema().names()
             if col not in self.useless_col_list + [self.target_col]
         ]
-        self.categorical_col_list = [
+        self.categorical_col_list: list[str] = [
             col for col in self.categorical_col_list
-            if col not in self.useless_col_list
+            if 
+                (col not in self.useless_col_list) & 
+                (col in data.collect_schema().names())
         ]
         self.training_logger.info(f'Using {len(self.categorical_col_list)} categorical features')
 
