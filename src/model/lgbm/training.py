@@ -26,9 +26,7 @@ class LgbmTrainer(ModelTrain, LgbmInit):
         ]
         self.categorical_col_list: list[str] = [
             col for col in self.categorical_col_list
-            if 
-                (col not in self.useless_col_list) & 
-                (col in data.collect_schema().names())
+            if col in self.feature_list
         ]
         self.training_logger.info(f'Using {len(self.categorical_col_list)} categorical features')
 

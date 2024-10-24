@@ -102,10 +102,10 @@ class LgbmInit(ModelInit):
                     
     def get_categorical_columns(self) -> None:
         #load all possible categorical feature
-        self.categorical_col_list: list[str] = [
+        self.categorical_col_list: list[str] = (
             self.config_dict['COLUMN_INFO']['STRING_FEATURE'] +
             self.config_dict['COLUMN_INFO']['CATEGORICAL_FEATURE']
-        ]
+        )
         
     def create_experiment_structure(self) -> None:
         if not os.path.isdir(self.experiment_path):
