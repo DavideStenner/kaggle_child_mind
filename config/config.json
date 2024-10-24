@@ -14,6 +14,7 @@
     "ID_COL": "id",
     "COLUMN_INFO":  {
         "TARGET": "sii",
+        "SPECIAL_COLUMNS": ["PCIAT-Season"],
         "ORIGINAL_TARGET_SEASON": "PCIAT-Season",
         "ORIGINAL_TARGET_LIST": [
             "PCIAT-PCIAT_01", "PCIAT-PCIAT_02", "PCIAT-PCIAT_03",
@@ -80,6 +81,11 @@
             "FGC-FGC_GSND_Zone", "FGC-FGC_GSD_Zone", "FGC-FGC_PU_Zone",
             "FGC-FGC_SRL_Zone", "FGC-FGC_SRR_Zone", "FGC-FGC_TL_Zone",
             "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num", "PreInt_EduHx-computerinternet_hoursday"
+        ],
+        "TIME_SERIES_FEATURES": [
+            "X", "Y", "Z", "enmo",
+            "anglez", "non-wear_flag",
+            "light", "battery_voltage"
         ]
     }
 }
