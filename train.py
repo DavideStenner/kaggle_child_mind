@@ -32,7 +32,7 @@ if __name__=='__main__':
         trainer = LgbmPipeline(
             experiment_name=experiment_name + "_lgb",
             params_lgb=params_model,
-            config_dict=config_dict, data_columns=preprocessor.feature_list,
+            config_dict=config_dict,
             evaluate_shap=False,
         )
         trainer.train_explain()
