@@ -29,7 +29,8 @@ class PreprocessInit(BaseInit):
     
     def _initialize_other_info(self) -> None:
         self.id_col: str = self.config_dict['ID_COL']
-
+        self.time_series_list: list[pl.LazyFrame] = []
+        
     def _initialize_preprocess_logger(self) -> None:
         self.preprocess_logger: logging.Logger = get_logger('preprocess.txt')
                 
@@ -45,7 +46,8 @@ class PreprocessInit(BaseInit):
     def _initialize_empty_dataset(self) -> None:
         self.base_data: Union[pl.LazyFrame, pl.DataFrame]
         self.data: Union[pl.LazyFrame, pl.DataFrame]
-    
+        self.time_series: Union[pl.LazyFrame, pl.DataFrame]
+        
     def _get_dataframe(self, data: Union[pl.DataFrame, pl.LazyFrame]) -> pl.DataFrame:
         if isinstance(data, pl.LazyFrame):
             return data.collect()
