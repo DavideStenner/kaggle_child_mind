@@ -105,13 +105,11 @@ class XgbExplainer(XgbInit):
             'best_epoch': best_epoch_lgb+1,
             'best_score': best_score_lgb,
             'all_best_score': {
-                {
-                    metric_: progress_df.loc[
-                        best_epoch_lgb,
-                        f"average_{metric_}"
-                    ]
-                    for metric_ in list_metric
-                }
+                metric_: progress_df.loc[
+                    best_epoch_lgb,
+                    f"average_{metric_}"
+                ]
+                for metric_ in list_metric
             }
         }
         
