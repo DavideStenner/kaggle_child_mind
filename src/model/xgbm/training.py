@@ -97,7 +97,7 @@ class XgbTrainer(ModelTrain, XgbInit):
         _ = gc.collect()
 
     
-    def get_dataset(self, fold_: int, fold_: int) -> Tuple[xgb.DMatrix]:
+    def get_dataset(self, fold_: int) -> Tuple[xgb.DMatrix]:
         fold_data = self.access_fold(fold_=fold_)
 
         train_filtered = fold_data.filter(
@@ -160,7 +160,7 @@ class XgbTrainer(ModelTrain, XgbInit):
                 self.train_target(fold_=fold_, model_type=model_type)
             
             self.save_model(target=model_type)
-            
+
     def save_model(self, target: str)->None:            
         self.save_pickle_model_list(
             getattr(
