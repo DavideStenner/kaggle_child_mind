@@ -61,9 +61,7 @@ class XgbExplainer(XgbInit):
             model_type=model_type
         )
 
-        progress_dict = {
-            'time': range(progress_df.shape[0])
-        }
+        progress_dict = {}
 
         list_metric = progress_list[0]['valid'].keys()
         
@@ -76,6 +74,7 @@ class XgbExplainer(XgbInit):
             )
 
         progress_df = pd.DataFrame(progress_dict)
+        progress_df['time'] = range(progress_df.shape[0])
         
         for metric_ in list_metric:
             
