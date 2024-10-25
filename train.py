@@ -38,7 +38,18 @@ if __name__=='__main__':
         trainer.train_explain()
         
     elif (args.model == 'xgb') | (args.all_model):
-        raise NotImplementedError
+        from src.model.xgbm.pipeline import XgbPipeline
+
+        params_model, experiment_name = import_params(model='xgb')
+
+        trainer = XgbPipeline(
+            experiment_name=experiment_name + "_xgb",
+            params_xgb=params_model,
+            config_dict=config_dict,
+            evaluate_shap=False,
+        )
+        trainer.train_explain()
+        
         
     elif (args.model == 'nn') | (args.all_model):
         raise NotImplementedError
