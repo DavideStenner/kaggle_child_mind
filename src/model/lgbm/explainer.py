@@ -58,7 +58,7 @@ class LgbmExplainer(LgbmInit):
         )
 
         progress_dict = {
-            'time': range(self.params_lgb['n_round']),
+            'time': range(progress_df.shape[0])
         }
 
         list_metric = progress_list[0]['valid'].keys()
@@ -100,7 +100,16 @@ class LgbmExplainer(LgbmInit):
 
         best_result = {
             'best_epoch': best_epoch_lgb+1,
-            'best_score': best_score_lgb
+            'best_score': best_score_lgb,
+            'all_best_score': {
+                {
+                    metric_: progress_df.loc[
+                        best_epoch_lgb,
+                        f"average_{metric_}"
+                    ]
+                    for metric_ in list_metric
+                }
+            }
         }
         
         for metric_ in list_metric:
