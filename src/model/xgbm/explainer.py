@@ -146,7 +146,7 @@ class XgbExplainer(XgbInit):
         for model_type in self.model_used:
             self.load_used_feature(model_type=model_type)        
             if (
-                'multi_strategy' in self.params_xgb[model_type].keys()
+                'multi_strategy' in self.params_xgb.keys()
             ):
                 #not supported
                 self.__get_permutation_importance(model_type=model_type)
@@ -240,15 +240,15 @@ class XgbExplainer(XgbInit):
 
         return score_oof
 
-    def __get_list_of_oof_dataset(self, current_model: str) -> list[Tuple[pd.DataFrame, pd.DataFrame]]:
+    def __get_list_of_oof_dataset(self) -> list[Tuple[pd.DataFrame, pd.DataFrame]]:
         list_dataset: list[Tuple[pd.DataFrame, pd.DataFrame]] = []
         
         for fold_ in range(self.n_fold):
             fold_data = (
                 pl.read_parquet(
                     os.path.join(
-                        self.config_dict['PATH_GOLD_PARQUET_DATA'],
-                        f'train_{current_model}.parquet'
+                        self.config_dict['PATH_GOLD_DATA'],
+                        f'data.parquet'
                     )
                 )
                 .with_columns(
@@ -276,8 +276,8 @@ class XgbExplainer(XgbInit):
         
         return list_dataset
     
-    def __get_permutation_importance(self, type_model: str) -> None:
-        self.__get_multi_permutation_feature_importance(current_model=type_model)
+    def __get_permutation_importance(self, model_type: str) -> None:
+        self.__get_multi_permutation_feature_importance(model_type=model_type)
         
     def __shuffled_dataset(self, dataset: pd.DataFrame, feature: str) -> pd.DataFrame:
         dataset[feature] = dataset[feature].sample(frac=1).to_numpy('float64')
@@ -285,7 +285,7 @@ class XgbExplainer(XgbInit):
     
     def __get_multi_permutation_feature_importance(
             self, 
-            current_model:str,
+            model_type:str,
             #magical number
             num_repetition: int = 3
         ) -> None:
@@ -296,22 +296,22 @@ class XgbExplainer(XgbInit):
             num_repetition (int, optional): how many times to repeat each fold shuffle. Defaults to 3.
         """
         model_list: list[xgb.Booster] = self.load_pickle_model_list(
-            type_model=current_model
+            model_type=model_type
         )
-        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_oof_dataset(current_model=current_model)
-        best_epoch: int = self.load_best_result(current_model)['best_epoch']
+        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_oof_dataset()
+        best_epoch: int = self.load_best_result(model_type=model_type)['best_epoch']
         
         base_score: float = self.__oof_score(
             dataset_list=dataset_list,
             model_list=model_list, best_epoch=best_epoch
         )
-        self.training_logger.info(f'{current_model} has a base score of {base_score}')
+        self.training_logger.info(f'{model_type} has a base score of {base_score}')
                 
         feature_importance_dict = {
             feature: base_score
             for feature in self.feature_list
         }
-        self.training_logger.info(f'Starting {current_model} to calculate permutation importance over {len(self.feature_list)} features')
+        self.training_logger.info(f'Starting {model_type} to calculate permutation importance over {len(self.feature_list)} features')
         for feature in tqdm(self.feature_list):
             shuffled_dataset = copy.deepcopy(dataset_list)
 
@@ -345,7 +345,7 @@ class XgbExplainer(XgbInit):
         )
         result.to_excel(
             os.path.join(
-                self.experiment_path_dict['feature_importance'].format(type=current_model),
+                self.experiment_path_dict['feature_importance'].format(type=model_type),
                 'feature_importances.xlsx'
             ), 
             index=False
