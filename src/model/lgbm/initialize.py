@@ -87,7 +87,7 @@ class LgbmInit(ModelInit):
 
     def initialize_logger(self) -> None:
         self.training_logger: logging.Logger = get_logger(
-            file_name='training_lgb.txt', path_logger=self.experiment_path
+            file_name='training_log.txt', path_logger=self.experiment_path
         )
         
     def initialize_model_utils(self) -> None:
