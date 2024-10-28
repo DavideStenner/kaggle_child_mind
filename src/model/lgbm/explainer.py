@@ -285,7 +285,7 @@ class LgbmExplainer(LgbmInit):
             increment_score = best_score - base_cv_score
             
             self.training_logger.info(
-                f'Best treshold combination for {model_type} with optimized score of {best_score} with an increment of {increment_score}:'
+                f'Best treshold combination for {model_type} with optimized score of {best_score:.6f} with an increment of {increment_score:.6f}:'
             )
             self.training_logger.info(
                 f'T1: {best_combination[0]}\nT2: {best_combination[1]}\nT3: {best_combination[2]}'
