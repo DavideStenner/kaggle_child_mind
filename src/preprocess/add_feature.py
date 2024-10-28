@@ -85,4 +85,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 self.time_series,
                 on=self.config_dict['ID_COL'], how='left'
             )
+            .with_columns(
+                pl.col('total_count_dataset').fill_null(0)
+            )
         )
