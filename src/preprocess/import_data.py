@@ -14,7 +14,6 @@ class PreprocessImport(BaseImport, PreprocessInit):
                     'train.csv'
                 )
             )
-            .filter(pl.col(self.target).is_not_null())
         )
         self.__scan_time_series()
         

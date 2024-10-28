@@ -48,8 +48,9 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
     
     def __create_binary_fold(self) -> pl.LazyFrame:
         splitter_ = StratifiedKFold(self.n_folds, shuffle=True)
+        base_data = self.data.filter(pl.col(self.target).is_not_null())
         id_data = (
-            self.data
+            base_data
             .with_columns(
                 (
                     pl.when(pl.col('Basic_Demos-Age')<=7).then(0)
@@ -86,10 +87,11 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
             )
             
         data  = self.__create_fold_from_mapper(
-            data=self.data, 
+            data=base_data, 
             fold_mapper=fold_mapper
         )
         return data
 
     def create_fold(self) -> None:        
         self.data: pl.DataFrame = self.__create_binary_fold()
+        self.null_data: pl.DataFrame = self.data.filter(pl.col(self.target).is_null())

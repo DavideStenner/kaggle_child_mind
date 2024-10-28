@@ -25,10 +25,21 @@ class PreprocessPipeline(BasePipeline, PreprocessImport, PreprocessAddFeature, P
         
         (
             self.data
+            .filter(pl.col(self.target).is_not_null())
             .write_parquet(
             os.path.join(
                     self.config_dict['PATH_GOLD_DATA'],
                     f'data.parquet'
+                )
+            )
+        )
+        
+        (
+            self.null_data
+            .write_parquet(
+            os.path.join(
+                    self.config_dict['PATH_GOLD_DATA'],
+                    f'data_null.parquet'
                 )
             )
         )
