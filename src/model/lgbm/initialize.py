@@ -64,7 +64,8 @@ class LgbmInit(ModelInit):
         self.params_lgb: dict[str, Any] = params_lgb
         
         self.feature_list: list[str] = []
-        
+        self.original_path_gold: str = self.config_dict['PATH_GOLD_DATA']
+
         self.get_categorical_columns()
         self.initialize_model_utils()
         self.get_model_file_name_dict()
@@ -91,7 +92,7 @@ class LgbmInit(ModelInit):
         
     def initialize_model_utils(self) -> None:
         self.id_row: str = self.config_dict['ID_COL']
-        
+
         self.feature_precision: str = 'float64'
         self.target_precision: str = 'float64'
 
@@ -105,7 +106,6 @@ class LgbmInit(ModelInit):
             )
 
     def set_postprocess_utils(self) -> None:
-        self.original_path_gold: str = self.config_dict['PATH_GOLD_DATA']
         self.list_treshold_value: list[list[float]] = [
             combination_ 
             for combination_ in product(
@@ -153,19 +153,19 @@ class LgbmInit(ModelInit):
     def get_model_file_name_dict(self) -> None:
         self.model_file_name_dict: dict[str, str] =  {
             'progress_list': {
-                model_type: f'progress_{model_type}_list.pkl'
+                model_type: f'progress_list.pkl'
                 for model_type in self.model_used
             },
             'best_result': {
-                model_type: f'best_result_{model_type}_lgb.txt'
+                model_type: f'best_result.txt'
                 for model_type in self.model_used
             },
             'model_pickle_list': {
-                model_type: f'model_{model_type}_list_lgb.pkl'
+                model_type: f'model_list.pkl'
                 for model_type in self.model_used
             },
             'model_list': {
-                model_type: f'lgb_{model_type}' + '_{fold_}.txt'
+                model_type: 'lgb_{fold_}.txt'
                 for model_type in self.model_used
             }
         }

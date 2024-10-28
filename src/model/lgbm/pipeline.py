@@ -53,7 +53,9 @@ class LgbmPipeline(ModelPipeline, LgbmTrainer, LgbmExplainer, LgbmInference):
                 self.load_best_result(model_type=model_type)['treshold_optim']['best_score']
             )
         
-        self.training_logger.info(f"{'\n'.join(pseudo_label_score_list)}")
+        self.training_logger.info('\n\n')
+        
+        self.training_logger.info(f"{'\n'.join([str(x) for x in pseudo_label_score_list])}")
         
         best_pseudo: np.ndarray = np.argmax(pseudo_label_score_list)
         best_pseudo_score: float = pseudo_label_score_list[best_pseudo]
