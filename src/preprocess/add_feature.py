@@ -13,8 +13,30 @@ from src.preprocess.initialize import PreprocessInit
 class PreprocessAddFeature(BaseFeature, PreprocessInit):
 
     def create_feature(self) -> None:   
+        self.__create_base_feature()
         self.__create_time_series_feature()
     
+    def __create_base_feature(self) -> None:
+        self.base_data = (
+            self.base_data
+            .with_columns(
+                (pl.col('Physical-BMI') * pl.col('Basic_Demos-Age')).alias('BMI_Age'),
+                (pl.col('PreInt_EduHx-computerinternet_hoursday') * pl.col('Basic_Demos-Age')).alias('Internet_Hours_Age'),
+                (pl.col('PreInt_EduHx-computerinternet_hoursday') * pl.col('Physical-BMI')).alias('BMI_Internet_Hours'),
+                (pl.col('BIA-BIA_Fat') / pl.col('BIA-BIA_BMI')).alias('BFP_BMI'),
+                (pl.col('BIA-BIA_FFMI') / pl.col('BIA-BIA_Fat')).alias('FFMI_BFP'),
+                (pl.col('BIA-BIA_FMI') / pl.col('BIA-BIA_Fat')).alias('FMI_BFP'),
+                (pl.col('BIA-BIA_LST') / pl.col('BIA-BIA_TBW')).alias('LST_TBW'),
+                (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_BMR')).alias('BFP_BMR'),
+                (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_DEE')).alias('BFP_DEE'),
+                (pl.col('BIA-BIA_BMR') / pl.col('Physical-Weight')).alias('BMR_Weight'),
+                (pl.col('BIA-BIA_DEE') / pl.col('Physical-Weight')).alias('DEE_Weight'),
+                (pl.col('BIA-BIA_SMM') / pl.col('Physical-Height')).alias('SMM_Height'),
+                (pl.col('BIA-BIA_SMM') / pl.col('BIA-BIA_FMI')).alias('Muscle_to_Fat'),
+                (pl.col('BIA-BIA_TBW') / pl.col('Physical-Weight')).alias('Hydration_Status'),
+                (pl.col('BIA-BIA_ICW') / pl.col('BIA-BIA_TBW')).alias('ICW_TBW'),
+            )
+        )
     def __create_time_series_feature(self) -> None:
         self.time_series_list: list[pl.DataFrame] = [
                 (
@@ -34,6 +56,16 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
                                 self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'] 
                             )
+                        ]
+                    )
+                    .with_columns(
+                        [
+                            pl.sum_horizontal(
+                                [
+                                    f'{col}_count'
+                                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                                ]
+                            ).cast(pl.UInt32).alias(f'total_count_dataset')
                         ]
                     )
                     .collect()
