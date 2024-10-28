@@ -2,12 +2,16 @@ import os
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import seaborn as sns
 import lightgbm as lgb
 import matplotlib.pyplot as plt
 
-from typing import Union, Dict
+from tqdm import tqdm
+from typing import Union, Dict, Tuple
 from src.model.lgbm.initialize import LgbmInit
+from src.model.metric.utils import get_ordinal_target
+from src.model.metric.official_metric import quadratic_weighted_kappa
 
 class LgbmExplainer(LgbmInit):       
     def plot_train_curve(self, 
@@ -191,8 +195,109 @@ class LgbmExplainer(LgbmInit):
             ),
             index=False
         )
-    def get_oof_insight(self) -> None:
-        pass
 
+    def __get_list_of_oof_dataset(self) -> list[Tuple[pd.DataFrame, pd.DataFrame]]:
+        list_dataset: list[Tuple[pd.DataFrame, pd.DataFrame]] = []
+        
+        for fold_ in range(self.n_fold):
+            fold_data = (
+                pl.read_parquet(
+                    os.path.join(
+                        self.config_dict['PATH_GOLD_DATA'],
+                        f'data.parquet'
+                    )
+                )
+                .with_columns(
+                    (
+                        pl.col('fold_info').str.split(', ')
+                        .list.get(fold_).alias('current_fold')
+                    )
+                )
+                .filter(
+                    (pl.col('current_fold') == 'v')
+                )
+            )
+            test_feature = (
+                fold_data
+                .select(self.feature_list)
+                .to_pandas()
+            )
+            
+            test_target = (
+                fold_data
+                .select(self.target_col)
+                .to_pandas()
+                .to_numpy('int').reshape((-1))
+            )
+            list_dataset.append([test_feature, test_target])
+        
+        return list_dataset
+
+    def oof_get_best_treshold(self) -> None:
+        self.set_postprocess_utils()
+        self.training_logger.info(f'{len(self.list_treshold_value)} postprocess treshold combinations')
+        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_oof_dataset()
+
+        for model_type in self.model_used:
+            model_list: list[lgb.Booster] = self.load_pickle_model_list(
+                model_type=model_type, 
+            )
+            best_result: dict[str, any] = self.load_best_result(model_type=model_type)
+            
+            best_epoch: int = best_result['best_epoch']
+
+            list_result_by_combination: list[float] = [0] * len(self.list_treshold_value)
+            
+            self.training_logger.info(f'Starting {model_type} treshold postprocess')
+
+            for fold_, (test_feature, test_target) in enumerate(dataset_list):
+                pred_target = model_list[fold_].predict(
+                    data=test_feature.to_numpy('float64'),
+                    num_iteration = best_epoch
+                )
+                treshold_iterator = tqdm(enumerate(self.list_treshold_value), total=len(self.list_treshold_value))
+                
+                for idx_combination, treshold_combination_ in treshold_iterator:
+                    rounded_prediciton_ = (
+                        np.where(
+                            pred_target < treshold_combination_[0], 0,
+                            np.where(
+                                pred_target < treshold_combination_[1], 1,
+                                    np.where(
+                                        pred_target < treshold_combination_[2], 2, 
+                                        3
+                                    )
+                                )
+                        )
+                    )
+
+                    list_result_by_combination[idx_combination] += quadratic_weighted_kappa(
+                        y_true=test_target, y_pred=rounded_prediciton_
+                    )/self.n_fold
+            
+            #find best
+            idx_best_combination = np.argmax(list_result_by_combination)
+            
+            best_score = list_result_by_combination[idx_best_combination]
+            best_combination = self.list_treshold_value[idx_best_combination]
+            
+            base_cv_score = best_result['best_score']
+            increment_score = best_score - base_cv_score
+            
+            self.training_logger.info(
+                f'Best treshold combination for {model_type} with optimized score of {best_score} with an increment of {increment_score}:'
+            )
+            self.training_logger.info(
+                f'T1: {best_combination[0]}\nT2: {best_combination[1]}\nT3: {best_combination[2]}'
+            )
+            best_result['best_combination'] = best_combination
+            
+            self.save_best_result(
+                best_result=best_result, model_type=model_type, 
+            )
+            
+    def get_oof_insight(self) -> None:                
+        self.oof_get_best_treshold()
+        
     def get_oof_prediction(self) -> None:
         pass

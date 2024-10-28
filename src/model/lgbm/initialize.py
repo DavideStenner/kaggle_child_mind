@@ -3,10 +3,12 @@ import json
 import pickle
 import logging
 
+import numpy as np
 import polars as pl
 import lightgbm as lgb
 
 from typing import Any, Union, Dict, Tuple
+from itertools import product
 from src.base.model.initialize import ModelInit
 from src.utils.logging_utils import get_logger
 
@@ -99,7 +101,23 @@ class LgbmInit(ModelInit):
                 self, f'progress_{model_type}_list', [] 
             )
 
-                    
+    def set_postprocess_utils(self) -> None:
+        self.list_treshold_value: list[list[float]] = [
+            combination_ 
+            for combination_ in product(
+                *[
+                    np.arange(
+                        0, self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']+1, 
+                        step=(self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']+1)/50
+                    ).tolist()
+                    for _ in range(self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']-1)
+                ]
+            )
+            if
+                (combination_[0]<combination_[1])&
+                (combination_[0]<combination_[2])&
+                (combination_[1]<combination_[2])
+        ]
     def get_categorical_columns(self) -> None:
         #load all possible categorical feature
         self.categorical_col_list: list[str] = (
