@@ -50,14 +50,24 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
         splitter_ = StratifiedKFold(self.n_folds, shuffle=True)
         id_data = (
             self.data
+            .with_columns(
+                (
+                    pl.when(pl.col('Basic_Demos-Age')<=7).then(0)
+                    .when(pl.col('Basic_Demos-Age')<=9).then(1)
+                    .when(pl.col('Basic_Demos-Age')<=10).then(2)
+                    .when(pl.col('Basic_Demos-Age')<=13).then(3)
+                    .otherwise(4)
+                    .alias('Basic_Demos-Age')
+                )
+            )
             .select(
                 self.id_col, 
-                'Basic_Demos-Sex', 'sii',
+                'Basic_Demos-Age', 'sii',
             )
             .select(
                 self.id_col,
                 (
-                    pl.col('Basic_Demos-Sex').cast(pl.Utf8) +
+                    pl.col('Basic_Demos-Age').cast(pl.Utf8) +
                     pl.col('sii').cast(pl.Utf8)
                 ).alias('slice')
             )
