@@ -13,7 +13,7 @@ if __name__=='__main__':
     plt.set_loglevel('WARNING')
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default='xgb', type=str)
+    parser.add_argument('--model', default='lgb', type=str)
     parser.add_argument('--all_model', action='store_true')
     
     args = parser.parse_args()
