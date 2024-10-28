@@ -350,7 +350,7 @@ class XgbExplainer(XgbInit):
         result = pd.DataFrame(
             data=feature_importance_dict
         )
-        result.sort_values('importance').to_excel(
+        result.sort_values('importance', ascending=False).to_excel(
             os.path.join(
                 self.experiment_path_dict['feature_importance'].format(model_type=model_type),
                 'feature_importances.xlsx'
