@@ -73,15 +73,15 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             feval=lgb_quadratic_kappa
         )
 
-        model.save_model(
-            os.path.join(
-                self.experiment_model_path.format(model_type=model_type),
-                (
-                    self.model_file_name_dict['model_list'][model_type]
-                    .format(fold_=fold_)
-                )
-            ), importance_type='gain'
-        )
+        # model.save_model(
+        #     os.path.join(
+        #         self.experiment_model_path.format(model_type=model_type),
+        #         (
+        #             self.model_file_name_dict['model_list'][model_type]
+        #             .format(fold_=fold_)
+        #         )
+        #     ), importance_type='gain'
+        # )
 
         setattr(
             self, f"model_{model_type}_list",
