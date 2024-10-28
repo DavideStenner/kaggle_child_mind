@@ -93,5 +93,5 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
         return data
 
     def create_fold(self) -> None:        
-        self.data: pl.DataFrame = self.__create_binary_fold()
         self.null_data: pl.DataFrame = self.data.filter(pl.col(self.target).is_null())
+        self.data: pl.DataFrame = self.__create_binary_fold()
