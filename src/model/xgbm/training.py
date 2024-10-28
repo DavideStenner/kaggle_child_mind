@@ -10,6 +10,7 @@ from typing import Tuple, Dict
 from src.base.model.training import ModelTrain
 from src.model.xgbm.initialize import XgbInit
 from src.model.metric.official_metric import xgb_quadratic_kappa
+from src.model.metric.utils import get_ordinal_target
 
 class XgbTrainer(ModelTrain, XgbInit):
     def _init_train(self) -> None:
@@ -98,12 +99,6 @@ class XgbTrainer(ModelTrain, XgbInit):
 
     
     def get_dataset(self, fold_: int) -> Tuple[xgb.DMatrix]:
-        def __get_ordinal_target(target_array: np.ndarray) -> np.ndarray:
-            ordinal_train_target = np.zeros((target_array.shape[0], self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']))
-            for i in range(target_array.shape[0]):
-                ordinal_train_target[i, :(target_array[i]+1)] = 1
-                
-            return ordinal_train_target
         
         fold_data = self.access_fold(fold_=fold_)
 
@@ -124,8 +119,8 @@ class XgbTrainer(ModelTrain, XgbInit):
 
         train_target = train_filtered.select(self.target_col).collect().to_pandas().to_numpy('int').reshape((-1))
         test_target = test_filtered.select(self.target_col).collect().to_pandas().to_numpy('int').reshape((-1))
-        ordinal_train_target = __get_ordinal_target(target_array=train_target)
-        ordinal_test_target = __get_ordinal_target(target_array=test_target)
+        ordinal_train_target = get_ordinal_target(target_array=train_target, num_target=self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'])
+        ordinal_test_target = get_ordinal_target(target_array=test_target, num_target=self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'])
         
         train_matrix = xgb.DMatrix(
             train_filtered.select(self.feature_list).collect().to_pandas().to_numpy(self.feature_precision),
