@@ -1,6 +1,7 @@
 import os
 import gc
 import numpy as np
+import pandas as pd
 import polars as pl
 import lightgbm as lgb
 
@@ -155,6 +156,111 @@ class LgbmTrainer(ModelTrain, LgbmInit):
                 self.train_target(fold_=fold_, model_type=model_type)
             
             self.save_model(target=model_type)
+            
+    def begin_pseudo_label(self, model_type: str):
+        assert model_type in self.model_used
+        self.training_logger.info(f'Starting pseudo labeling {model_type} experiment')
+        
+        self.load_used_feature(model_type=model_type)
+        self.load_used_categorical_feature(model_type=model_type)
+        
+        self.save_oof_pseudo_label(model_type=model_type)
+        
+        self.model_used = [f'{model_type}_pseudo']
+        self.model_metric_used[f'{model_type}_pseudo'] = self.model_metric_used[model_type]
+        
+        self.initialize_model_utils()
+        self.get_model_file_name_dict()
+
+    def save_oof_pseudo_label(self, model_type: str) -> None:
+        list_pseudo_dataset: list[pl.DataFrame] = []
+        best_result_ = self.load_best_result(model_type=model_type)
+        assert best_result_
+        
+        null_data = pl.read_parquet(
+            os.path.join(
+                self.original_path_gold,
+                f'data_null.parquet'
+            )
+        )
+        base_data_casted = (
+            pl.read_parquet(
+                os.path.join(
+                    self.original_path_gold,
+                    f'data.parquet'
+                )
+            )
+            .with_columns(pl.col(self.target_col).cast(pl.Float64))
+        )
+        
+        for fold_ in range(self.n_fold):
+            fold_data = (
+                pl.scan_parquet(
+                    os.path.join(
+                        self.original_path_gold,
+                        f'data.parquet'
+                    )
+                ).with_columns(
+                    (
+                        pl.col('fold_info').str.split(', ')
+                        .list.get(fold_).alias('current_fold')
+                    )
+                )
+            )
+                    
+            pseudo_train_current_fold: str = (
+                fold_data.filter(
+                    (pl.col('current_fold') == 'v')
+                )
+                .select(pl.col('fold_info').first())
+                .collect()
+                .item()
+            )
+            pseudo_train_current_fold = (
+                pseudo_train_current_fold
+                .replace('t', 'n')
+                .replace('v', 't')
+            )
+            pseudo_test_filtered = null_data.to_pandas().copy(deep=True)
+            
+            model_list = self.load_pickle_model_list(model_type=model_type)
+            test_features: np.ndarray = (
+                pseudo_test_filtered[self.feature_list]
+                .to_numpy(self.feature_precision)
+            )
+            oof_prediction: np.ndarray = model_list[fold_].predict(
+                test_features,
+                num_iteration=best_result_['best_epoch']
+            )
+            pseudo_test_filtered[self.target_col] = oof_prediction
+            pseudo_test_filtered['fold_info'] = pseudo_train_current_fold
+
+            list_pseudo_dataset += [
+                pl.from_dataframe(pseudo_test_filtered).with_columns(pl.col(self.target_col).cast(pl.Float64))
+            ]
+            
+        pseudo_dataset = (
+            pl.concat(list_pseudo_dataset)
+            .select(base_data_casted.collect_schema().names())
+            .cast(base_data_casted.collect_schema())
+        )
+
+        pseudo_dataset: pl.DataFrame = pl.concat(
+            [base_data_casted, pseudo_dataset]
+        )
+        self.training_logger.info(f'Saving pseudo labeled dataset')
+        
+        (
+            pseudo_dataset
+            .write_parquet(
+            os.path.join(
+                    self.experiment_path_dict['pseudo_labeling'].format(model_type=model_type),
+                    f'data.parquet'
+                )
+            )
+        )
+        self.config_dict['PATH_GOLD_DATA'] = self.experiment_path_dict['pseudo_labeling'].format(model_type=model_type)
+        self.training_logger.info(f'Changed gold path to {self.config_dict['PATH_GOLD_DATA']}')
             
     def save_model(self, target: str)->None:            
         self.save_pickle_model_list(

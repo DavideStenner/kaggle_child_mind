@@ -51,6 +51,9 @@ class LgbmInit(ModelInit):
             ),
             'model': os.path.join(
                 self.experiment_model_path, 'model'
+            ),
+            'pseudo_labeling': os.path.join(
+                self.experiment_model_path, 'pseudo_labeling'
             )
         }
 
@@ -102,6 +105,7 @@ class LgbmInit(ModelInit):
             )
 
     def set_postprocess_utils(self) -> None:
+        self.original_path_gold: str = self.config_dict['PATH_GOLD_DATA']
         self.list_treshold_value: list[list[float]] = [
             combination_ 
             for combination_ in product(

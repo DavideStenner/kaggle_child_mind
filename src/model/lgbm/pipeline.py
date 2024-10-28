@@ -33,9 +33,37 @@ class LgbmPipeline(ModelPipeline, LgbmTrainer, LgbmExplainer, LgbmInference):
         self.get_feature_importance()
         self.get_oof_prediction()
         self.get_oof_insight()
+    
+    def pseudo_label_train(self) -> None:   
+        import numpy as np    
+        model_type = 'main'
+        
+        pseudo_label_score_list = [
+            self.load_best_result(model_type=model_type)['treshold_optim']['best_score']
+        ]
+        
+        for _ in range(5):
+            self.begin_pseudo_label(model_type=model_type)
+            self.create_experiment_structure()
+            self.run_train()
+            self.explain_model()
+            model_type += '_pseudo'
+            
+            pseudo_label_score_list.append(
+                self.load_best_result(model_type=model_type)['treshold_optim']['best_score']
+            )
+        
+        self.training_logger.info(f"{'\n'.join(pseudo_label_score_list)}")
+        
+        best_pseudo: np.ndarray = np.argmax(pseudo_label_score_list)
+        best_pseudo_score: float = pseudo_label_score_list[best_pseudo]
+        
+        self.training_logger.info(f'Best pseudo labeling score: {best_pseudo_score:.6f} for a total of {best_pseudo} consecutive pseudo labeling')
+        self.training_logger.info(f'Improvement of {(best_pseudo_score-pseudo_label_score_list[0]):.6f}')
         
     def train_explain(self) -> None:
         self.create_experiment_structure()
         self.initialize_logger()
         self.run_train()
         self.explain_model()
+        self.pseudo_label_train()

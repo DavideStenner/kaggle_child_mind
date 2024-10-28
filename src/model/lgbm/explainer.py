@@ -290,7 +290,10 @@ class LgbmExplainer(LgbmInit):
             self.training_logger.info(
                 f'T1: {best_combination[0]}\nT2: {best_combination[1]}\nT3: {best_combination[2]}'
             )
-            best_result['best_combination'] = best_combination
+            best_result['treshold_optim'] = {
+                'best_score': best_score,
+                'best_combination': best_combination
+            }
             
             self.save_best_result(
                 best_result=best_result, model_type=model_type, 
