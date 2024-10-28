@@ -12,6 +12,8 @@ from tqdm import tqdm
 from typing import Union, Tuple, Dict
 from sklearn.metrics import f1_score
 from src.model.xgbm.initialize import XgbInit
+from src.model.metric.utils import get_ordinal_target
+from src.model.metric.official_metric import xgb_quadratic_kappa, xgb_ordinal_kappa
 
 class XgbExplainer(XgbInit):       
     def plot_train_curve(self, 
@@ -207,8 +209,9 @@ class XgbExplainer(XgbInit):
             index=False
         )
     
-    def __calculate_score(self, ) -> float:
-        pass
+    def __calculate_score(self, y_pred:np.ndarray, y_true=np.ndarray) -> float:
+        return xgb_ordinal_kappa(y_true=y_true, y_pred=y_pred)
+    
     def __oof_score(
             self, 
             dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]],
@@ -227,14 +230,14 @@ class XgbExplainer(XgbInit):
         score_oof = 0
 
         for fold_, (test_feature, test_target) in enumerate(dataset_list):
-            pred_ = model_list[fold_].predict(
+            pred_target = model_list[fold_].predict(
                 data=xgb.DMatrix(
                     data=test_feature.to_numpy('float64'),
                     feature_names=self.feature_list
                 ),
                 iteration_range=(0, best_epoch)
             )
-            score_fold = self.__calculate_score()
+            score_fold = self.__calculate_score(y_pred=pred_target, y_true=test_target)
 
             score_oof += score_fold/self.n_fold
 
@@ -267,10 +270,14 @@ class XgbExplainer(XgbInit):
                 .to_pandas()
             )
             
-            test_target = (
-                fold_data
-                .select(self.target_col)
-                .to_pandas()
+            test_target = get_ordinal_target(
+                target_array=(
+                    fold_data
+                    .select(self.target_col)
+                    .to_pandas()
+                    .to_numpy('int').reshape((-1))
+                ),
+                num_target=self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']
             )
             list_dataset.append([test_feature, test_target])
         
@@ -343,9 +350,9 @@ class XgbExplainer(XgbInit):
         result = pd.DataFrame(
             data=feature_importance_dict
         )
-        result.to_excel(
+        result.sort_values('importance').to_excel(
             os.path.join(
-                self.experiment_path_dict['feature_importance'].format(type=model_type),
+                self.experiment_path_dict['feature_importance'].format(model_type=model_type),
                 'feature_importances.xlsx'
             ), 
             index=False
