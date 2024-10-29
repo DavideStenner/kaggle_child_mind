@@ -1,4 +1,5 @@
 import os
+import shap
 
 import numpy as np
 import pandas as pd
@@ -298,9 +299,82 @@ class LgbmExplainer(LgbmInit):
             self.save_best_result(
                 best_result=best_result, model_type=model_type, 
             )
+
+    def oof_get_shap_contribution(self) -> None:
+        np.seterr(invalid='ignore')
+        
+        self.training_logger.info('Starting shap calculation')        
+        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_oof_dataset()
+
+        for model_type in self.model_used:
+            self.load_used_feature(model_type=model_type)
+
+            model_list: list[lgb.Booster] = self.load_pickle_model_list(
+                model_type=model_type, 
+            )
+            best_result: dict[str, any] = self.load_best_result(model_type=model_type)
             
+            best_epoch: int = best_result['best_epoch']
+            
+            shap_list: list[np.ndarray] = []
+            data_list: list[np.ndarray] = []
+            shap_insight: pd.DataFrame = pd.DataFrame(
+                {
+                    'feature': self.feature_list
+                }
+            )
+            
+            for fold_, (test_feature, _) in enumerate(dataset_list):                
+                shap_values = model_list[fold_].predict(
+                    test_feature, 
+                    num_iteration=best_epoch, pred_contrib=True
+                )[:, :-1]
+                
+                data_list.append(test_feature)
+                shap_list.append(shap_values)
+                shap_insight[f'imp_shap_fold_{fold_}'] = np.abs(shap_values).mean(axis=0)
+            
+            shap_values = np.concatenate(shap_list, axis=0)
+            data_values = np.concatenate(data_list, axis=0)
+            shap_insight[f'mean_imp_shap'] = shap_insight[
+                [f'imp_shap_fold_{fold_}' for fold_ in range(self.n_fold)]
+            ].mean(axis=1)
+        
+            (
+                shap_insight
+                .sort_values('mean_imp_shap', ascending=False)
+                .reset_index(drop=True)
+                .to_excel(
+                    os.path.join(
+                        self.experiment_path_dict['feature_importance'].format(model_type=model_type), 
+                        'shap_importance.xlsx'
+                    ),
+                    index=False
+                )
+            )
+                
+            #shap
+            fig = plt.figure()
+            shap.summary_plot(
+                shap_values, data_values,
+                [
+                    col[:30] for col in self.feature_list
+                ],
+                show=False, 
+                max_display=30
+            )
+            plt.savefig(
+                os.path.join(
+                    self.experiment_path_dict['insight'].format(model_type=model_type),
+                    f'shap_insight.png'
+                )
+            )
+            plt.close(fig)
+        
+        np.seterr(invalid='warn')
+
     def get_oof_insight(self) -> None:                
         self.oof_get_best_treshold()
         
     def get_oof_prediction(self) -> None:
-        pass
+        self.oof_get_shap_contribution()

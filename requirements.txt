@@ -13,3 +13,4 @@ xgboost
 openpyxl
 kaggle
 scikit-learn
+shap
