@@ -20,21 +20,164 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
         self.base_data = (
             self.base_data
             .with_columns(
-                (pl.col('Physical-BMI') * pl.col('Basic_Demos-Age')).alias('BMI_Age'),
-                (pl.col('PreInt_EduHx-computerinternet_hoursday') * pl.col('Basic_Demos-Age')).alias('Internet_Hours_Age'),
-                (pl.col('PreInt_EduHx-computerinternet_hoursday') * pl.col('Physical-BMI')).alias('BMI_Internet_Hours'),
-                (pl.col('BIA-BIA_Fat') / pl.col('BIA-BIA_BMI')).alias('BFP_BMI'),
-                (pl.col('BIA-BIA_FFMI') / pl.col('BIA-BIA_Fat')).alias('FFMI_BFP'),
-                (pl.col('BIA-BIA_FMI') / pl.col('BIA-BIA_Fat')).alias('FMI_BFP'),
-                (pl.col('BIA-BIA_LST') / pl.col('BIA-BIA_TBW')).alias('LST_TBW'),
-                (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_BMR')).alias('BFP_BMR'),
-                (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_DEE')).alias('BFP_DEE'),
-                (pl.col('BIA-BIA_BMR') / pl.col('Physical-Weight')).alias('BMR_Weight'),
-                (pl.col('BIA-BIA_DEE') / pl.col('Physical-Weight')).alias('DEE_Weight'),
-                (pl.col('BIA-BIA_SMM') / pl.col('Physical-Height')).alias('SMM_Height'),
-                (pl.col('BIA-BIA_SMM') / pl.col('BIA-BIA_FMI')).alias('Muscle_to_Fat'),
-                (pl.col('BIA-BIA_TBW') / pl.col('Physical-Weight')).alias('Hydration_Status'),
-                (pl.col('BIA-BIA_ICW') / pl.col('BIA-BIA_TBW')).alias('ICW_TBW'),
+                pl.coalesce(['PAQ_C-PAQ_C_Total', 'PAQ_A-PAQ_A_Total']).alias('PAQ_Total')
+            )
+            .with_columns(
+                ##Demographics
+                [
+                    (pl.col('Physical-BMI') * pl.col('Basic_Demos-Age')).alias('new_BMI_Age'),
+                    (pl.col('PreInt_EduHx-computerinternet_hoursday') * pl.col('Basic_Demos-Age')).alias('new_Internet_Hours_Age'),
+                ] +
+                ##Children's Global Assessment Scale
+                [
+                    (pl.col('Physical-BMI')/pl.col('CGAS-CGAS_Score')).alias('mine_bmi_CGAS'),
+                    (pl.col('Physical-Height')/pl.col('CGAS-CGAS_Score')).alias('mine_height_CGAS'),
+                    (pl.col('Physical-Weight')/pl.col('CGAS-CGAS_Score')).alias('mine_weight_CGAS'),
+                    (pl.col('PAQ_Total')/pl.col('CGAS-CGAS_Score')).alias('mine_paq_total_CGAS'),
+                    (pl.col('SDS-SDS_Total_T')/pl.col('CGAS-CGAS_Score')).alias('mine_sds_total_CGAS'),
+                ] +
+                ##Physical Measures
+                [
+                    (pl.col('Physical-BMI') / pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('new_BMI_Internet_Hours'),
+                    (pl.col('Physical-Height') / pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('new_height_Internet_Hours'),
+                    (pl.col('Physical-Weight') / pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('new_weight_Internet_Hours'),
+                    (pl.col('Physical-Systolic_BP')-pl.col('Physical-Diastolic_BP')).alias('claude_Pulse_Pressure'),
+                    (
+                        (pl.col('Physical-Diastolic_BP'))/
+                        ((pl.col('Physical-Systolic_BP')-pl.col('Physical-Diastolic_BP'))/3)
+                    ).alias('claude_Mean_Arterial_Pressure')
+                ] +
+                [
+                    (pl.col('Physical-BMI')/pl.col(col)).alias(f'mine_bmi_{col}')
+                    for col in [
+                        'BIA-BIA_BMC', 'BIA-BIA_BMI', 
+                        'BIA-BIA_BMR', 'BIA-BIA_DEE', 
+                        'BIA-BIA_ECW', 'BIA-BIA_FFM',
+                        'BIA-BIA_FFMI', 'BIA-BIA_FMI',
+                        'BIA-BIA_Frame_num', 'BIA-BIA_ICW',
+                        'BIA-BIA_LDM', 'BIA-BIA_LST', 'BIA-BIA_SMM',
+                        'BIA-BIA_TBW'
+                    ]
+                ] +
+                [
+                    (pl.col(col)/pl.col('Physical-Height')).alias(f'mine_height_{col}')
+                    for col in [
+                        'BIA-BIA_BMC', 'BIA-BIA_BMI', 
+                        'BIA-BIA_BMR', 'BIA-BIA_DEE', 
+                        'BIA-BIA_ECW', 'BIA-BIA_FFM',
+                        'BIA-BIA_FFMI', 'BIA-BIA_FMI',
+                        'BIA-BIA_Frame_num', 'BIA-BIA_ICW',
+                        'BIA-BIA_LDM', 'BIA-BIA_LST', 'BIA-BIA_SMM',
+                        'BIA-BIA_TBW'
+                    ]
+                ] +
+                [
+                    (pl.col(col)/pl.col('Physical-Weight')).alias(f'mine_weight_{col}')
+                    for col in [
+                        'BIA-BIA_BMC', 'BIA-BIA_BMI', 
+                        'BIA-BIA_BMR', 'BIA-BIA_DEE', 
+                        'BIA-BIA_ECW', 'BIA-BIA_FFM',
+                        'BIA-BIA_FFMI', 'BIA-BIA_FMI',
+                        'BIA-BIA_Frame_num', 'BIA-BIA_ICW',
+                        'BIA-BIA_LDM', 'BIA-BIA_LST', 'BIA-BIA_SMM',
+                        'BIA-BIA_TBW'
+                    ]
+                ] +
+                
+                ##FitnessGram Vitals and Treadmill
+                [
+                    (pl.col('Fitness_Endurance-Time_Mins')*60+pl.col('Fitness_Endurance-Time_Sec')).alias('mine_Fitness_Endurance-Time_Total'),
+                    (pl.col('Fitness_Endurance-Max_Stage')/pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('mine_Fitness_Endurance_internet'),
+                ] +
+                
+                ##FitnessGram Child
+                [
+                    (pl.col('FGC-FGC_SRR') + pl.col('FGC-FGC_SRL')).alias('new_SRTotal'),
+                    (
+                        pl.mean_horizontal(
+                            [
+                                'FGC-FGC_PU', 'FGC-FGC_CU', 'FGC-FGC_GSD', 
+                                'FGC-FGC_GSND', 'FGC-FGC_SRL', 'FGC-FGC_SRR', 'FGC-FGC_TL'
+                            ]
+                        ).alias('new_horizontal_mean_FGC')
+                    )
+                ] +
+                [
+                    (
+                        (pl.col('FGC-FGC_CU_Zone')) +
+                        (pl.col('FGC-FGC_PU_Zone')) +
+                        (pl.col('FGC-FGC_SRL_Zone')) +
+                        (pl.col('FGC-FGC_SRR_Zone')) +
+                        (pl.col('FGC-FGC_TL_Zone'))
+                    ).cast(pl.UInt8).alias('claude_Fitness_Level'),
+                    (
+                        (pl.col('FGC-FGC_GSD_Zone')>=2) +
+                        (pl.col('FGC-FGC_GSD_Zone')>=2) +
+                        (pl.col('FGC-FGC_CU_Zone')) +
+                        (pl.col('FGC-FGC_PU_Zone')) +
+                        (pl.col('FGC-FGC_SRL_Zone')) +
+                        (pl.col('FGC-FGC_SRR_Zone')) +
+                        (pl.col('FGC-FGC_TL_Zone'))
+                    ).cast(pl.UInt8).alias('claude_Fitness_Achievements'),
+                    (
+                        (
+                            (pl.col('FGC-FGC_PU')-pl.col('FGC-FGC_PU').mean())/pl.col('FGC-FGC_PU').std() +
+                            (pl.col('FGC-FGC_CU')-pl.col('FGC-FGC_CU').mean())/pl.col('FGC-FGC_CU').std() +
+                            (pl.col('FGC-FGC_GSD')-pl.col('FGC-FGC_GSD').mean())/pl.col('FGC-FGC_GSD').std() +
+                            (pl.col('FGC-FGC_GSND')-pl.col('FGC-FGC_GSND').mean())/pl.col('FGC-FGC_GSND').std()
+                        )/4
+                    ).alias('claude_Overall_Strength_Score'),
+                    (
+                        (
+                            (pl.col('FGC-FGC_PU')-pl.col('FGC-FGC_PU').mean())/pl.col('FGC-FGC_PU').std() +
+                            (pl.col('FGC-FGC_CU')-pl.col('FGC-FGC_CU').mean())/pl.col('FGC-FGC_CU').std() +
+                            (pl.col('FGC-FGC_GSD')-pl.col('FGC-FGC_GSD').mean())/pl.col('FGC-FGC_GSD').std() +
+                            (pl.col('FGC-FGC_GSND')-pl.col('FGC-FGC_GSND').mean())/pl.col('FGC-FGC_GSND').std() +
+                            (pl.col('FGC-FGC_SRL')-pl.col('FGC-FGC_SRL').mean())/pl.col('FGC-FGC_SRL').std() +
+                            (pl.col('FGC-FGC_SRR')-pl.col('FGC-FGC_SRR').mean())/pl.col('FGC-FGC_SRR').std() +
+                            (pl.col('FGC-FGC_TL')-pl.col('FGC-FGC_TL').mean())/pl.col('FGC-FGC_TL').std()
+                        )/4
+                    ).alias('claude_Overall_FGC_score'),
+                    (pl.col('FGC-FGC_SRR') + pl.col('FGC-FGC_SRL') + pl.col('FGC-FGC_TL')).alias('cluade_Overall_Flexibility_Score'),
+                ] +
+                
+                ##Bio-electric Impedance Analysis
+                [
+                    (pl.col('BIA-BIA_LST') / pl.col('BIA-BIA_TBW')).alias('new_LST_TBW'),
+                    (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_BMR')).alias('new_BFP_BMR'),
+                    (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_DEE')).alias('new_BFP_DEE'),
+                    (pl.col('BIA-BIA_SMM') / pl.col('BIA-BIA_FMI')).alias('new_Muscle_to_Fat'),
+                    (pl.col('BIA-BIA_ICW') / pl.col('BIA-BIA_TBW')).alias('new_ICW_TBW'),
+                    
+                    (pl.col('BIA-BIA_ECW') / pl.col('BIA-BIA_ICW')).alias('claude_Water_Balance_Ratio'),
+                    (pl.col('BIA-BIA_ECW') / pl.col('BIA-BIA_ICW')).alias('Water_Balance_Ratio'),
+                ] +
+                [
+                    (pl.col('BIA-BIA_Fat')/pl.col(col)).alias(f'mine_fat_{col}')
+                    for col in [
+                        'BIA-BIA_BMC', 'BIA-BIA_BMI', 
+                        'BIA-BIA_BMR', 'BIA-BIA_DEE', 
+                        'BIA-BIA_ECW', 'BIA-BIA_FFM',
+                        'BIA-BIA_FFMI', 'BIA-BIA_FMI',
+                        'BIA-BIA_Frame_num', 'BIA-BIA_ICW',
+                        'BIA-BIA_LDM', 'BIA-BIA_LST', 'BIA-BIA_SMM',
+                        'BIA-BIA_TBW'
+                    ]
+                ] +
+                ## Physical Activity Questionnaire - Sleep Disturbance Scale
+                [
+                    (
+                        (
+                            (pl.col('PAQ_Total')-pl.col('PAQ_Total').min())/
+                            (pl.col('PAQ_Total').max()-pl.col('PAQ_Total').min())
+                        ) +
+                        (
+                            1 -
+                            (pl.col('SDS-SDS_Total_T')-pl.col('SDS-SDS_Total_T').min())/
+                            (pl.col('SDS-SDS_Total_T').max()-pl.col('SDS-SDS_Total_T').min())
+                        )
+                    ).alias('claude_activit_sleep_interaction')        
+                ]        
             )
         )
     def __create_time_series_feature(self) -> None:
