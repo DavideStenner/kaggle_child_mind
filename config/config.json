@@ -6,7 +6,7 @@
     "PATH_OTHER_DATA": "data/other_dataset",
     "PATH_TESTING_DATA": "testing_data",
     "PATH_EXPERIMENT": "experiment",
-    "N_FOLD": 3,
+    "N_FOLD": 5,
     "LOG_FOLDER": "log",
     "ORIGINAL_DATA_FOLDER": "child-mind-institute-problematic-internet-use",
     "ORIGINAL_TRAIN_CHUNK_FOLDER": "series_train.parquet",
@@ -24,7 +24,7 @@
             "PCIAT-PCIAT_10", "PCIAT-PCIAT_11", "PCIAT-PCIAT_12",
             "PCIAT-PCIAT_13", "PCIAT-PCIAT_14", "PCIAT-PCIAT_15",
             "PCIAT-PCIAT_16", "PCIAT-PCIAT_17", "PCIAT-PCIAT_18",
-            "PCIAT-PCIAT_19", "PCIAT-PCIAT_20", "PCIAT-PCIAT_Total"
+            "PCIAT-PCIAT_19", "PCIAT-PCIAT_20", "PCIAT-PCIAT_Total", "sii"
         ],
         "FEATURE_LIST": [
             "Basic_Demos-Enroll_Season", "Basic_Demos-Age", "Basic_Demos-Sex",
