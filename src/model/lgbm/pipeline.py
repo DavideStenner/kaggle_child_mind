@@ -31,8 +31,8 @@ class LgbmPipeline(ModelPipeline, LgbmTrainer, LgbmExplainer, LgbmInference):
     def explain_model(self) -> None:
         self.evaluate_score()
         self.get_feature_importance()
-        self.get_oof_prediction()
         self.get_oof_insight()
+        self.get_oof_prediction()
     
     def pseudo_label_train(self) -> None:   
         import numpy as np    
