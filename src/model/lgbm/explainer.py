@@ -311,7 +311,6 @@ class LgbmExplainer(LgbmInit):
                 model_type=model_type, 
             )
             best_result: dict[str, any] = self.load_best_result(model_type=model_type)
-            optim_tresh_kappa = partial(quadratic_weighted_kappa_tresh, best_result['treshold_optim']['best_combination'])
             best_epoch: int = best_result['best_epoch']
             
             shap_list: list[np.ndarray] = []
@@ -320,14 +319,8 @@ class LgbmExplainer(LgbmInit):
                 {
                     'feature': self.feature_list
                 }
-            )
-            performance_df_list: list[pl.DataFrame] = []
-            
-            for fold_, (test_feature, test_target) in enumerate(dataset_list):          
-                pred_values = model_list[fold_].predict(
-                    test_feature,
-                    num_iteration=best_epoch
-                )      
+            )            
+            for fold_, (test_feature, _) in enumerate(dataset_list):          
                 shap_values = model_list[fold_].predict(
                     test_feature, 
                     num_iteration=best_epoch, pred_contrib=True
