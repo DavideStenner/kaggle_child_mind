@@ -26,15 +26,19 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 [
                     (pl.col('Physical-BMI') * pl.col('Basic_Demos-Age')).alias('demo_Age_bmi'),
                     (pl.col('PreInt_EduHx-computerinternet_hoursday') * pl.col('Basic_Demos-Age')).alias('demo_age_Internet_Hours'),
+                    (pl.col('PreInt_EduHx-computerinternet_hoursday') / pl.col('Basic_Demos-Age')).alias('demo_age_Internet_Hours_2'),
                 ] +
                 ##Children's Global Assessment Scale
                 [
                     (pl.col('Physical-BMI')/pl.col('CGAS-CGAS_Score')).alias('cgas_bmi'),
                     (pl.col('Physical-Height')/pl.col('CGAS-CGAS_Score')).alias('cgas_height'),
                     (pl.col('Physical-Weight')/pl.col('CGAS-CGAS_Score')).alias('cgas_weight'),
-                    (pl.col('PAQ_Total')/pl.col('CGAS-CGAS_Score')).alias('cgas_paq_total'),
-                    (pl.col('SDS-SDS_Total_T')/pl.col('CGAS-CGAS_Score')).alias('cgas_sds_total'),
-                ] +
+                    (pl.col('PAQ_Total')/pl.col('CGAS-CGAS_Score')).alias('cgas_paq_total_1'),
+                    (pl.col('SDS-SDS_Total_T')/pl.col('CGAS-CGAS_Score')).alias('cgas_sds_total_1'),
+                    (pl.col('CGAS-CGAS_Score')/pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('cgas_intenet_1'),
+                    (pl.col('PAQ_Total')*pl.col('CGAS-CGAS_Score')).alias('cgas_paq_total_2'),
+                    (pl.col('SDS-SDS_Total_T')*pl.col('CGAS-CGAS_Score')).alias('cgas_sds_total_2'),
+                    (pl.col('CGAS-CGAS_Score')*pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('cgas_intenet_2'),                ] +
                 ##Physical Measures
                 [
                     (pl.col('Physical-BMI') / pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('phisical_BMI_Internet_Hours'),
@@ -106,8 +110,18 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 [
                     (
                        pl.col('PAQ_Total')/pl.col('SDS-SDS_Total_T')
-                    ).alias('sleep_activit_sleep_interaction')        
-                ]        
+                    ).alias('sleep_activit_sleep_interaction_1'),
+                    (
+                       pl.col('PAQ_Total')*pl.col('SDS-SDS_Total_T')
+                    ).alias('sleep_activit_sleep_interaction_2')        
+                ] +
+                ## Internet Use
+                [
+                   (pl.col('PreInt_EduHx-computerinternet_hoursday')*pl.col('SDS-SDS_Total_T')).alias('internet_sds_1'), 
+                   (pl.col('PreInt_EduHx-computerinternet_hoursday')/pl.col('SDS-SDS_Total_T')).alias('internet_sds_2'), 
+                   (pl.col('PreInt_EduHx-computerinternet_hoursday')*pl.col('PAQ_Total')).alias('internet_paq_1'), 
+                   (pl.col('PreInt_EduHx-computerinternet_hoursday')/pl.col('PAQ_Total')).alias('internet_paq_2'), 
+                ]
             )
         )
     def __create_time_series_feature(self) -> None:
