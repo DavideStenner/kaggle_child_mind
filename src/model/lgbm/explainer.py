@@ -248,7 +248,7 @@ class LgbmExplainer(LgbmInit):
             
             best_epoch: int = best_result['best_epoch']
 
-            list_result_by_combination: list[float] = [0] * len(self.list_treshold_value)
+            result_by_combination: np.ndarray = np.zeros(len(self.list_treshold_value))
             
             self.training_logger.info(f'Starting {model_type} treshold postprocess')
 
