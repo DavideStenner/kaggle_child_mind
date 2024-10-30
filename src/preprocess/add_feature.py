@@ -140,7 +140,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 pl.col(col)
                                 .filter(pl.col('non-wear_flag')==0)
                                 .count()
-                                .alias(f'{col}_ts_count')
+                                .alias(f'time_series_{col}_count')
                             )
                             for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
                         ] +
@@ -149,7 +149,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 pl.col(col)
                                 .filter(pl.col('non-wear_flag')==0)
                                 .min()
-                                .alias(f'{col}_ts_min')
+                                .alias(f'time_series_{col}_min')
                             )
                             for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
                         ] +
@@ -158,7 +158,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 pl.col(col)
                                 .filter(pl.col('non-wear_flag')==0)
                                 .max()
-                                .alias(f'{col}_ts_max')
+                                .alias(f'time_series_{col}_max')
                             )
                             for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
                         ] +
@@ -167,7 +167,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 pl.col(col)
                                 .filter(pl.col('non-wear_flag')==0)
                                 .mean()
-                                .alias(f'{col}_ts_mean')
+                                .alias(f'time_series_{col}_mean')
                             )
                             for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
                         ] +
@@ -176,7 +176,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 pl.col(col)
                                 .filter(pl.col('non-wear_flag')==0)
                                 .median()
-                                .alias(f'{col}_ts_median')
+                                .alias(f'time_series_{col}_median')
                             )
                             for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
                         ] +
@@ -185,7 +185,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 pl.col(col)
                                 .filter(pl.col('non-wear_flag')==0)
                                 .std()
-                                .alias(f'{col}_ts_std')
+                                .alias(f'time_series_{col}_std')
                             )
                             for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
                         ]
