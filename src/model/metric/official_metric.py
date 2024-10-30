@@ -9,14 +9,14 @@ from sklearn.metrics import cohen_kappa_score
 def quadratic_weighted_kappa(y_true, y_pred):
     return cohen_kappa_score(y_true, y_pred, weights='quadratic')
 
-def quadratic_weighted_kappa_tresh(best_combination: list[float], y_true: np.ndarray, y_pred: np.ndarray):
+def quadratic_weighted_kappa_tresh(combination: list[float], y_true: np.ndarray, y_pred: np.ndarray):
     rounded_prediciton_ = (
         np.where(
-            y_pred < best_combination[0], 0,
+            y_pred < combination[0], 0,
             np.where(
-                y_pred < best_combination[1], 1,
+                y_pred < combination[1], 1,
                     np.where(
-                        y_pred < best_combination[2], 2, 
+                        y_pred < combination[2], 2, 
                         3
                     )
                 )
