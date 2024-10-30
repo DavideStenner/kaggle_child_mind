@@ -12,7 +12,6 @@ from tqdm import tqdm
 from functools import partial
 from typing import Union, Dict, Tuple
 from src.model.lgbm.initialize import LgbmInit
-from src.model.metric.utils import get_ordinal_target
 from src.model.metric.official_metric import quadratic_weighted_kappa, quadratic_weighted_kappa_tresh
 
 class LgbmExplainer(LgbmInit):       
