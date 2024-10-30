@@ -54,10 +54,12 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
             .with_columns(
                 (
                     pl.when(pl.col('Basic_Demos-Age')<=7).then(0)
-                    .when(pl.col('Basic_Demos-Age')<=9).then(1)
-                    .when(pl.col('Basic_Demos-Age')<=10).then(2)
-                    .when(pl.col('Basic_Demos-Age')<=13).then(3)
-                    .otherwise(4)
+                    .when(pl.col('Basic_Demos-Age')<=8).then(1)
+                    .when(pl.col('Basic_Demos-Age')<=9).then(2)
+                    .when(pl.col('Basic_Demos-Age')<=10).then(3)
+                    .when(pl.col('Basic_Demos-Age')<=12).then(4)
+                    .when(pl.col('Basic_Demos-Age')<=14).then(5)
+                    .otherwise(6)
                     .alias('Basic_Demos-Age')
                 )
             )
