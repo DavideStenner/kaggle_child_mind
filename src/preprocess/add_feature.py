@@ -120,7 +120,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     (pl.col('BIA-BIA_DEE') / pl.col('Physical-Weight')).alias('bio_DEE_Weight'),
                     (pl.col('BIA-BIA_SMM') / pl.col('Physical-Height')).alias('bio_SMM_Height'),
                     (pl.col('BIA-BIA_TBW') / pl.col('Physical-Weight')).alias('bio_Hydration_Status'),
-                ] 
+                ] +
                 ## Physical Activity Questionnaire - Sleep Disturbance Scale
                 [
                     (
