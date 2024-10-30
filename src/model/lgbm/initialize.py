@@ -8,7 +8,7 @@ import polars as pl
 import lightgbm as lgb
 
 from typing import Any, Union, Dict, Tuple
-from itertools import product
+from itertools import combinations
 from src.base.model.initialize import ModelInit
 from src.utils.logging_utils import get_logger
 
@@ -106,22 +106,17 @@ class LgbmInit(ModelInit):
             )
 
     def set_postprocess_utils(self) -> None:
-        self.list_treshold_value: list[list[float]] = [
-            combination_ 
-            for combination_ in product(
-                *[
-                    np.arange(
-                        0, self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']+1, 
-                        step=(self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']+1)/50
-                    ).tolist()
-                    for _ in range(self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']-1)
-                ]
-            )
-            if
-                (combination_[0]<combination_[1])&
-                (combination_[0]<combination_[2])&
-                (combination_[1]<combination_[2])
-        ]
+        max_range: int = (
+            self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'] if
+            self.config_dict['COLUMN_INFO']['TARGET'] == 'sii'
+            else 80
+        )
+        total_grid = np.linspace(0, max_range+1, 50)
+
+        self.list_treshold_value: list[list[float]] = list(
+            combinations(total_grid, 3)
+        )
+                                
     def get_categorical_columns(self) -> None:
         #load all possible categorical feature
         self.categorical_col_list: list[str] = (
