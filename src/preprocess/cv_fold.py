@@ -92,6 +92,28 @@ class PreprocessFoldCreator(BaseCVFold, PreprocessInit):
             data=base_data, 
             fold_mapper=fold_mapper
         )
+        self.preprocess_logger.info(
+            '\n\n' +
+            (
+                data
+                .group_by('sii', 'fold_info')
+                .agg(pl.len())
+                .sort('sii')
+                .to_pandas()
+                .to_markdown()
+            ) +
+            '\n\n' +
+            (
+                data
+                .group_by('Basic_Demos-Sex', 'fold_info')
+                .agg(pl.len())
+                .sort('Basic_Demos-Sex')
+                .to_pandas()
+                .to_markdown()
+            ) +
+            '\n\n'
+            
+        )
         return data
 
     def create_fold(self) -> None:        
