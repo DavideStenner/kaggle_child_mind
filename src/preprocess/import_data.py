@@ -38,6 +38,10 @@ class PreprocessImport(BaseImport, PreprocessInit):
                         'part-0.parquet'
                     )
                 )
+                #near the test
+                .filter(
+                    (pl.col('relative_date_PCIAT').abs()<=30)
+                )
                 .with_columns(
                     [
                         pl.lit(id_name).alias(self.config_dict['ID_COL'])
