@@ -198,8 +198,8 @@ class LgbmExplainer(LgbmInit):
             index=False
         )
 
-    def __get_list_of_oof_dataset(self) -> list[Tuple[pd.DataFrame, pd.DataFrame]]:
-        list_dataset: list[Tuple[pd.DataFrame, pd.DataFrame]] = []
+    def __get_list_of_oof_dataset(self) -> list[Tuple[pd.DataFrame, np.ndarray]]:
+        list_dataset: list[Tuple[pd.DataFrame, np.ndarray]] = []
         
         for fold_ in range(self.n_fold):
             fold_data = (
@@ -305,7 +305,7 @@ class LgbmExplainer(LgbmInit):
         np.seterr(invalid='ignore')
         
         self.training_logger.info('Starting shap calculation')        
-        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_oof_dataset()
+        dataset_list: list[Tuple[pd.DataFrame, np.ndarray]] = self.__get_list_of_oof_dataset()
 
         for model_type in self.model_used:
             self.load_used_feature(model_type=model_type)
