@@ -81,25 +81,6 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                         (pl.col('FGC-FGC_SRR_Zone')) +
                         (pl.col('FGC-FGC_TL_Zone'))
                     ).cast(pl.UInt8).alias('fitnessgramchild_Fitness_Achievements'),
-                    (
-                        (
-                            (pl.col('FGC-FGC_PU')-pl.col('FGC-FGC_PU').mean())/pl.col('FGC-FGC_PU').std() +
-                            (pl.col('FGC-FGC_CU')-pl.col('FGC-FGC_CU').mean())/pl.col('FGC-FGC_CU').std() +
-                            (pl.col('FGC-FGC_GSD')-pl.col('FGC-FGC_GSD').mean())/pl.col('FGC-FGC_GSD').std() +
-                            (pl.col('FGC-FGC_GSND')-pl.col('FGC-FGC_GSND').mean())/pl.col('FGC-FGC_GSND').std()
-                        )/4
-                    ).alias('fitnessgramchildOverall_Strength_Score'),
-                    (
-                        (
-                            (pl.col('FGC-FGC_PU')-pl.col('FGC-FGC_PU').mean())/pl.col('FGC-FGC_PU').std() +
-                            (pl.col('FGC-FGC_CU')-pl.col('FGC-FGC_CU').mean())/pl.col('FGC-FGC_CU').std() +
-                            (pl.col('FGC-FGC_GSD')-pl.col('FGC-FGC_GSD').mean())/pl.col('FGC-FGC_GSD').std() +
-                            (pl.col('FGC-FGC_GSND')-pl.col('FGC-FGC_GSND').mean())/pl.col('FGC-FGC_GSND').std() +
-                            (pl.col('FGC-FGC_SRL')-pl.col('FGC-FGC_SRL').mean())/pl.col('FGC-FGC_SRL').std() +
-                            (pl.col('FGC-FGC_SRR')-pl.col('FGC-FGC_SRR').mean())/pl.col('FGC-FGC_SRR').std() +
-                            (pl.col('FGC-FGC_TL')-pl.col('FGC-FGC_TL').mean())/pl.col('FGC-FGC_TL').std()
-                        )/4
-                    ).alias('fitnessgramchild_Overall_FGC_score'),
                     (pl.col('FGC-FGC_SRR') + pl.col('FGC-FGC_SRL') + pl.col('FGC-FGC_TL')).alias('fitnessgramchild_Overall_Flexibility_Score'),
                 ] +
                 
