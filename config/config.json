@@ -6,7 +6,7 @@
     "PATH_OTHER_DATA": "data/other_dataset",
     "PATH_TESTING_DATA": "testing_data",
     "PATH_EXPERIMENT": "experiment",
-    "N_FOLD": 5,
+    "N_FOLD": 3,
     "LOG_FOLDER": "log",
     "ORIGINAL_DATA_FOLDER": "child-mind-institute-problematic-internet-use",
     "ORIGINAL_TRAIN_CHUNK_FOLDER": "series_train.parquet",
@@ -85,7 +85,7 @@
         ],
         "TIME_SERIES_FEATURES": [
             "X", "Y", "Z", "enmo",
-            "anglez", "non-wear_flag",
+            "anglez",
             "light", "battery_voltage"
         ]
     }
