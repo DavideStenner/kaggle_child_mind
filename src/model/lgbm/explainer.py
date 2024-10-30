@@ -257,30 +257,28 @@ class LgbmExplainer(LgbmInit):
                     data=test_feature.to_numpy('float64'),
                     num_iteration = best_epoch
                 )
-                treshold_iterator = tqdm(enumerate(self.list_treshold_value), total=len(self.list_treshold_value))
+                treshold_iterator = tqdm(self.list_treshold_value, total=len(self.list_treshold_value))
                 
-                for idx_combination, treshold_combination_ in treshold_iterator:
-                    rounded_prediciton_ = (
-                        np.where(
-                            pred_target < treshold_combination_[0], 0,
-                            np.where(
-                                pred_target < treshold_combination_[1], 1,
-                                    np.where(
-                                        pred_target < treshold_combination_[2], 2, 
-                                        3
-                                    )
-                                )
-                        )
-                    )
-
-                    list_result_by_combination[idx_combination] += quadratic_weighted_kappa(
-                        y_true=test_target, y_pred=rounded_prediciton_
-                    )/self.n_fold
+                #partial for efficiency
+                partial_kappa = partial(
+                    quadratic_weighted_kappa_tresh,
+                    y_true=test_target,
+                    y_pred=pred_target
+                )
+                result_fold = np.array(
+                    [
+                        partial_kappa(
+                            treshold_combination_
+                        )/self.n_fold
+                        for treshold_combination_ in treshold_iterator
+                    ]
+                )
+                result_by_combination += result_fold
             
             #find best
-            idx_best_combination = np.argmax(list_result_by_combination)
+            idx_best_combination = np.argmax(result_by_combination)
             
-            best_score = list_result_by_combination[idx_best_combination]
+            best_score = result_by_combination[idx_best_combination]
             best_combination = self.list_treshold_value[idx_best_combination]
             
             base_cv_score = best_result['best_score']
