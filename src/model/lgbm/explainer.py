@@ -9,10 +9,11 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
+from functools import partial
 from typing import Union, Dict, Tuple
 from src.model.lgbm.initialize import LgbmInit
 from src.model.metric.utils import get_ordinal_target
-from src.model.metric.official_metric import quadratic_weighted_kappa
+from src.model.metric.official_metric import quadratic_weighted_kappa, quadratic_weighted_kappa_tresh
 
 class LgbmExplainer(LgbmInit):       
     def plot_train_curve(self, 
@@ -313,7 +314,7 @@ class LgbmExplainer(LgbmInit):
                 model_type=model_type, 
             )
             best_result: dict[str, any] = self.load_best_result(model_type=model_type)
-            
+            optim_tresh_kappa = partial(quadratic_weighted_kappa_tresh, best_result['treshold_optim']['best_combination'])
             best_epoch: int = best_result['best_epoch']
             
             shap_list: list[np.ndarray] = []
@@ -323,8 +324,13 @@ class LgbmExplainer(LgbmInit):
                     'feature': self.feature_list
                 }
             )
+            performance_df_list: list[pl.DataFrame] = []
             
-            for fold_, (test_feature, _) in enumerate(dataset_list):                
+            for fold_, (test_feature, test_target) in enumerate(dataset_list):          
+                pred_values = model_list[fold_].predict(
+                    test_feature,
+                    num_iteration=best_epoch
+                )      
                 shap_values = model_list[fold_].predict(
                     test_feature, 
                     num_iteration=best_epoch, pred_contrib=True
@@ -332,8 +338,81 @@ class LgbmExplainer(LgbmInit):
                 
                 data_list.append(test_feature)
                 shap_list.append(shap_values)
+                performance_df_list.append(
+                    pl.from_dict(
+                        {
+                            'Basic_Demos-Age': test_feature['Basic_Demos-Age'],
+                            'Basic_Demos-Sex': test_feature['Basic_Demos-Sex'],
+                            'y_pred': pred_values,
+                            'y_true': test_target,
+                        }
+                    )
+                )
                 shap_insight[f'imp_shap_fold_{fold_}'] = np.abs(shap_values).mean(axis=0)
             
+            performance_df = (
+                pl.concat(performance_df_list)
+                .with_columns(
+                    (
+                        pl.when(pl.col('Basic_Demos-Age')<=7).then(0)
+                        .when(pl.col('Basic_Demos-Age')<=9).then(1)
+                        .when(pl.col('Basic_Demos-Age')<=10).then(2)
+                        .when(pl.col('Basic_Demos-Age')<=13).then(3)
+                        .otherwise(4)
+                        .alias('Basic_Demos-Age-Binned')
+                    ),
+                    (
+                        pl.when(pl.col('Basic_Demos-Age')<=7).then(pl.lit('<=7'))
+                        .when(pl.col('Basic_Demos-Age')<=9).then(pl.lit('<=9'))
+                        .when(pl.col('Basic_Demos-Age')<=10).then(pl.lit('<=10'))
+                        .when(pl.col('Basic_Demos-Age')<=13).then(pl.lit('<=13'))
+                        .otherwise(pl.lit('>13'))
+                        .alias('Basic_Demos-Age')
+                    )
+                )
+            )
+
+            performance_df_age = (
+                performance_df
+                .group_by('Basic_Demos-Age', 'Basic_Demos-Age-Binned')
+                .agg(
+                    pl.len().alias('number_rows'),
+                    pl.map_groups(
+                        exprs=['y_true', 'y_pred'],
+                        function=lambda series_list:
+                            optim_tresh_kappa(
+                                y_true=series_list[0],
+                                y_pred=series_list[1]
+                            )
+                    )
+                )
+                .sort('Basic_Demos-Age-Binned')
+                .drop('Basic_Demos-Age-Binned')
+                .to_pandas()
+            )
+
+            performance_df_sex = (
+                performance_df
+                .group_by('Basic_Demos-Sex')
+                .agg(
+                    pl.len().alias('number_rows'),
+                    pl.map_groups(
+                        exprs=['y_true', 'y_pred'],
+                        function=lambda series_list:
+                            optim_tresh_kappa(
+                                y_true=series_list[0],
+                                y_pred=series_list[1]
+                            )
+                    )
+                )
+                .sort('Basic_Demos-Sex')
+                .to_pandas()
+            )
+            self.training_logger.info(performance_df_age.to_markdown())
+            self.training_logger.info('\n\n\n')
+            self.training_logger.info(performance_df_sex.to_markdown())
+            self.training_logger.info('\n\n\n')
+
             shap_values = np.concatenate(shap_list, axis=0)
             data_values = np.concatenate(data_list, axis=0)
             shap_insight[f'mean_imp_shap'] = shap_insight[
