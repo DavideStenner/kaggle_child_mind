@@ -151,7 +151,9 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 .min()
                                 .alias(f'time_series_{col}_min')
                             )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'] + [
+                                'weekday', 'quarter'
+                            ]
                         ] +
                         [
                             (
@@ -160,7 +162,9 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 .max()
                                 .alias(f'time_series_{col}_max')
                             )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'] + [
+                                'weekday', 'quarter'
+                            ]
                         ] +
                         [
                             (
@@ -169,7 +173,9 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                                 .mean()
                                 .alias(f'time_series_{col}_mean')
                             )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'] + [
+                                'weekday', 'quarter'
+                            ]
                         ] +
                         [
                             (
