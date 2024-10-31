@@ -95,7 +95,28 @@ class PreprocessPipeline(BasePipeline, PreprocessImport, PreprocessAddFeature, P
         self.create_fold()
         
         self.save_data()
-                
+
+    def preprocess_inference(self) -> None:        
+        self.preprocess_logger.info('Creating feature')
+        self.create_feature()
+
+        self.preprocess_logger.info('Merging all')
+        self.merge_all()
+        
+        self.preprocess_logger.info('Collecting Dataset')
+        
+        self.data: pl.DataFrame = self._get_dataframe(self.data)
+        self.preprocess_logger.info(
+            f'Collected dataset with {len(self._get_col_name(self.data))} columns and {self._get_number_rows(self.data)} rows'
+        )
+        
+        self.data.write_parquet(
+            os.path.join(
+                self.config_dict['PATH_GOLD_DATA'],
+                f'test_data.parquet'
+            )
+        )
+
     def begin_inference(self) -> None:
         self.preprocess_logger.info('beginning preprocessing inference dataset')
         
@@ -109,7 +130,7 @@ class PreprocessPipeline(BasePipeline, PreprocessImport, PreprocessAddFeature, P
         self.import_all()
         
         if self.inference:    
-            raise NotImplementedError
+            self.preprocess_inference()
 
         else:
             self.preprocess_train()

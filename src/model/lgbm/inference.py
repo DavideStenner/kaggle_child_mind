@@ -27,21 +27,37 @@ class LgbmInference(ModelPredict, LgbmInit):
             
         return prediction_
     
-    def predict(self, test_data: pl.DataFrame) -> pl.Series:
+    def predict(self, model_type: str, test_data: pl.DataFrame) -> pl.Series:
         assert self.inference
 
-        self.load_used_feature(model_type='main')
-        self.load_used_categorical_feature(model_type='main')
+        self.load_used_feature(model_type=model_type)
+        self.load_used_categorical_feature(model_type=model_type)
+        self.load_best_result(model_type=model_type)
+        best_result = self.load_best_result(
+            model_type=model_type
+        )
         
-        best_epoch = self.load_best_result(
-            model_type='main'
-        )['best_epoch']
+        best_epoch = best_result['best_epoch']
+        best_combination = best_result['treshold_optim']['best_combination']
         model_list: list[lgb.Booster] = self.load_pickle_model_list(
-            model_type='main', 
+            model_type=model_type, 
         )
 
         prediction_ = self.blend_model_predict(
             test_data=test_data, model_list=model_list, epoch=best_epoch
         )
+        
+        rounded_prediciton_ = (
+            np.where(
+                prediction_ < best_combination[0], 0,
+                np.where(
+                    prediction_ < best_combination[1], 1,
+                        np.where(
+                            prediction_ < best_combination[2], 2, 
+                            3
+                        )
+                    )
+            )
+        )
             
-        return pl.Series(self.target_col, prediction_)
+        return pl.Series(self.target_col, rounded_prediciton_)
