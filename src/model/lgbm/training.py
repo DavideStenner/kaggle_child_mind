@@ -172,14 +172,20 @@ class LgbmTrainer(ModelTrain, LgbmInit):
         return new_model_name
 
     def save_oof_pseudo_label(self, model_type: str) -> None:
-        list_pseudo_dataset: list[pl.DataFrame] = []
         best_result_ = self.load_best_result(model_type=model_type)
+        model_list = self.load_pickle_model_list(model_type=model_type)
         assert best_result_
         
         null_data = pl.read_parquet(
             os.path.join(
                 self.original_path_gold,
                 f'data_null.parquet'
+            )
+        )
+        test_data = pl.read_parquet(
+            os.path.join(
+                self.original_path_gold,
+                f'test_data.parquet'
             )
         )
         base_data_casted = (
@@ -191,7 +197,11 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             )
             .with_columns(pl.col(self.target_col).cast(pl.Float64))
         )
+        list_pseudo_null_dataset: list[pl.DataFrame] = []
         
+        if self.config_dict['ONLINE']:
+            list_pseudo_test_dataset: list[pl.DataFrame] = []
+
         for fold_ in range(self.n_fold):
             fold_data = (
                 pl.scan_parquet(
@@ -220,29 +230,65 @@ class LgbmTrainer(ModelTrain, LgbmInit):
                 .replace('t', 'n')
                 .replace('v', 't')
             )
-            pseudo_test_filtered = null_data.to_pandas().copy(deep=True)
+            pseudo_null = null_data.to_pandas().copy(deep=True)
+            pseudo_test = test_data.to_pandas().copy(deep=True)
             
-            model_list = self.load_pickle_model_list(model_type=model_type)
-            test_features: np.ndarray = (
-                pseudo_test_filtered[self.feature_list]
-                .to_numpy(self.feature_precision)
-            )
             oof_prediction: np.ndarray = model_list[fold_].predict(
-                test_features,
+                 (
+                    pseudo_null[self.feature_list]
+                    .to_numpy(self.feature_precision)
+                ),
                 num_iteration=best_result_['best_epoch']
             )
-            pseudo_test_filtered[self.target_col] = oof_prediction
-            pseudo_test_filtered['fold_info'] = pseudo_train_current_fold
-
-            list_pseudo_dataset += [
-                pl.from_dataframe(pseudo_test_filtered).with_columns(pl.col(self.target_col).cast(pl.Float64))
-            ]
+            pseudo_null[self.target_col] = oof_prediction
+            pseudo_null['fold_info'] = pseudo_train_current_fold
             
-        pseudo_dataset = (
-            pl.concat(list_pseudo_dataset)
-            .select(base_data_casted.collect_schema().names())
-            .cast(base_data_casted.collect_schema())
+            list_pseudo_null_dataset.append(
+                pl.from_dataframe(pseudo_null).with_columns(pl.col(self.target_col).cast(pl.Float64)),
+            )
+
+            if self.config_dict['ONLINE']:
+                oof_prediction_test: np.ndarray = model_list[fold_].predict(
+                    (
+                        pseudo_test[self.feature_list]
+                        .to_numpy(self.feature_precision)
+                    ),
+                    num_iteration=best_result_['best_epoch']
+                )
+                pseudo_test[self.target_col] = oof_prediction_test
+                pseudo_test['fold_info'] = pseudo_train_current_fold
+
+                list_pseudo_test_dataset.append(
+                    pl.from_dataframe(pseudo_test).with_columns(pl.col(self.target_col).cast(pl.Float64))
+                )
+            
+        #concat and select common columns
+        if self.config_dict['ONLINE']:
+            pseudo_test_dataset = pl.concat(list_pseudo_test_dataset)
+            keep_col_list: list[str] = pseudo_test_dataset.collect_schema().names()
+        else:
+            keep_col_list: list[str] = base_data_casted.collect_schema().names()
+            
+        pseudo_null_dataset = (
+            pl.concat(list_pseudo_null_dataset)
+            .select(keep_col_list)
         )
+        base_data_casted = (
+            base_data_casted
+            .select(keep_col_list)
+        )
+        
+        if self.config_dict['ONLINE']:
+            pseudo_dataset = (
+                pl.concat(
+                    [
+                        pseudo_null_dataset.cast(base_data_casted.collect_schema()), 
+                        pseudo_test_dataset.cast(base_data_casted.collect_schema())
+                    ]
+                )
+            )
+        else:
+            pseudo_dataset = pseudo_null_dataset.cast(base_data_casted.collect_schema())
 
         pseudo_dataset: pl.DataFrame = pl.concat(
             [base_data_casted, pseudo_dataset]

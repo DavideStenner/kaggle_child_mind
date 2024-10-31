@@ -12,6 +12,7 @@
     "ORIGINAL_TRAIN_CHUNK_FOLDER": "series_train.parquet",
     "ORIGINAL_TEST_CHUNK_FOLDER": "series_test.parquet",
     "ID_COL": "id",
+    "ONLINE": false,
     "COLUMN_INFO":  {
         "TARGET": "sii",
         "TARGET_N_UNIQUE": 4,
