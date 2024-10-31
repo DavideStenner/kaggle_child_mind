@@ -164,7 +164,27 @@ class LgbmInit(ModelInit):
                 for model_type in self.model_used
             }
         }
-    
+
+    def load_best_pseudo_result(self) -> dict[str, any]:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'best_pseudo_result.json'
+            ), 'r'
+        ) as file:
+            best_result = json.load(file)
+            
+        return best_result
+
+    def save_best_pseudo_result(self, pseudo_result: dict[str, any]) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'best_pseudo_result.json'
+            ), 'w'
+        ) as file:
+            json.dump(pseudo_result, file)
+
     def save_progress_list(self, progress_list: list, model_type: str) -> None:
         with open(
             os.path.join(
