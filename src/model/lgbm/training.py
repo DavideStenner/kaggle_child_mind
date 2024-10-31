@@ -107,7 +107,7 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             (pl.col('current_fold') == 'v')
         )
         
-        if self.config_dict['ONLINE']:
+        if not self.config_dict['ONLINE']:
             assert len(
                 set(
                     train_filtered.select(self.id_row).unique().collect().to_series().to_list()
