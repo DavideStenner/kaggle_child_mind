@@ -269,7 +269,7 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             )
         )
         self.config_dict['PATH_GOLD_DATA'] = self.experiment_path_dict['pseudo_labeling'].format(model_type=model_type)
-        self.training_logger.info(f'Changed gold path to {self.config_dict['PATH_GOLD_DATA']}')
+        self.training_logger.info(f"Changed gold path to {self.config_dict['PATH_GOLD_DATA']}")
             
     def save_model(self, target: str)->None:            
         self.save_pickle_model_list(

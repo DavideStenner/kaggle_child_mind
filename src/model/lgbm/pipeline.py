@@ -53,10 +53,8 @@ class LgbmPipeline(ModelPipeline, LgbmTrainer, LgbmExplainer, LgbmInference):
             pseudo_label_score_list.append(
                 self.load_best_result(model_type=model_type)['treshold_optim']['best_score']
             )
-        
-        self.training_logger.info('\n\n')
-        
-        self.training_logger.info(f"{'\n'.join([str(x) for x in pseudo_label_score_list])}")
+        all_score_message: str = '\n\n' + '\n'.join([str(x) for x in pseudo_label_score_list])        
+        self.training_logger.info(all_score_message)
         
         best_pseudo: int = int(np.argmax(pseudo_label_score_list))
         best_pseudo_score: float = pseudo_label_score_list[best_pseudo]
