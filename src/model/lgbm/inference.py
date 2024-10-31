@@ -27,7 +27,7 @@ class LgbmInference(ModelPredict, LgbmInit):
             
         return prediction_
     
-    def predict(self, model_type: str, test_data: pl.DataFrame) -> pl.Series:
+    def predict(self, model_type: str, test_data: pl.DataFrame) -> np.ndarray:
         assert self.inference
 
         self.load_used_feature(model_type=model_type)
@@ -60,4 +60,4 @@ class LgbmInference(ModelPredict, LgbmInit):
             )
         )
             
-        return pl.Series(self.target_col, rounded_prediciton_)
+        return rounded_prediciton_
