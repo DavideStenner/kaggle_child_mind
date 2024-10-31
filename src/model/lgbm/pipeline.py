@@ -42,13 +42,12 @@ class LgbmPipeline(ModelPipeline, LgbmTrainer, LgbmExplainer, LgbmInference):
             self.load_best_result(model_type=model_type)['treshold_optim']['best_score']
         ]
         
-        for _ in range(5):
-            self.begin_pseudo_label(model_type=model_type)
+        for _ in range(10):
+            model_type = self.begin_pseudo_label(model_type=model_type)
             self.create_experiment_structure()
             self.run_train()
             self.explain_model()
-            model_type += '_pseudo'
-            
+
             pseudo_label_score_list.append(
                 self.load_best_result(model_type=model_type)['treshold_optim']['best_score']
             )

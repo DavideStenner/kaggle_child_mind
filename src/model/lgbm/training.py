@@ -157,7 +157,7 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             
             self.save_model(target=model_type)
             
-    def begin_pseudo_label(self, model_type: str):
+    def begin_pseudo_label(self, model_type: str) -> str:
         assert model_type in self.model_used
         self.training_logger.info(f'Starting pseudo labeling {model_type} experiment')
         
@@ -166,11 +166,20 @@ class LgbmTrainer(ModelTrain, LgbmInit):
         
         self.save_oof_pseudo_label(model_type=model_type)
         
-        self.model_used = [f'{model_type}_pseudo']
-        self.model_metric_used[f'{model_type}_pseudo'] = self.model_metric_used[model_type]
+        if not model_type.split('_')[-1].isnumeric():
+            new_model_name = f'{model_type}_pseudo_0'
+        else:
+            base_name: str = '_'.join(model_type.split('_')[:-1])
+            pseudo_iteration: int = int(model_type.split('_')[-1])
+            new_model_name = f'{base_name}_{pseudo_iteration+1}'
+        
+        self.model_used = [new_model_name]
+        self.model_metric_used[new_model_name] = self.model_metric_used[model_type]
         
         self.initialize_model_utils()
         self.get_model_file_name_dict()
+        
+        return new_model_name
 
     def save_oof_pseudo_label(self, model_type: str) -> None:
         list_pseudo_dataset: list[pl.DataFrame] = []
