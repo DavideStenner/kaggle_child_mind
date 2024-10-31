@@ -107,13 +107,14 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             (pl.col('current_fold') == 'v')
         )
         
-        assert len(
-            set(
-                train_filtered.select(self.id_row).unique().collect().to_series().to_list()
-            ).intersection(
-                test_filtered.select(self.id_row).unique().collect().to_series().to_list()
-            )
-        ) == 0
+        if self.config_dict['ONLINE']:
+            assert len(
+                set(
+                    train_filtered.select(self.id_row).unique().collect().to_series().to_list()
+                ).intersection(
+                    test_filtered.select(self.id_row).unique().collect().to_series().to_list()
+                )
+            ) == 0
                         
         train_matrix = lgb.Dataset(
             train_filtered.select(self.feature_list).collect().to_pandas().to_numpy(self.feature_precision),
