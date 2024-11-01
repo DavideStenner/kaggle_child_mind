@@ -97,7 +97,31 @@ class XgbTrainer(ModelTrain, XgbInit):
         
         _ = gc.collect()
 
-    
+    def __check_validity_train_dataset(self) -> None:
+        NUMERIC_POLARS_DTYPES: list[pl.DataType] = [
+            pl.Int8, pl.Int16, pl.Int32, pl.Int64, 
+            pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
+            pl.Float32, pl.Float64, 
+        ]
+
+        data = self.access_fold(fold_=0)
+        feature_dataset = data.select(self.feature_list).clone()
+        
+        original_columns = feature_dataset.collect_schema().names()
+        only_numerical = feature_dataset.select(pl.all()).select(pl.col(NUMERIC_POLARS_DTYPES)).collect_schema().names()
+        
+        #no timestamp or string
+        assert set(original_columns) == set(only_numerical)
+        
+        sum_infinite_value: int = (
+            feature_dataset
+            .select(pl.all().is_infinite().sum())
+            .select(pl.sum_horizontal(pl.all()).alias('any_infinite'))
+            .collect()
+            .item()
+        )
+        assert sum_infinite_value == 0
+        
     def get_dataset(self, fold_: int) -> Tuple[xgb.DMatrix]:
         
         fold_data = self.access_fold(fold_=fold_)
@@ -157,6 +181,7 @@ class XgbTrainer(ModelTrain, XgbInit):
             #save feature list locally for later
             self.save_used_feature(model_type=model_type, feature_list=self.feature_list)
             self.save_used_categorical_feature(model_type=model_type)
+            self.__check_validity_train_dataset()
             
             self.training_logger.info(f'Start {model_type} with {len(self.feature_list)} features')
 
