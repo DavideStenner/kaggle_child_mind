@@ -35,15 +35,15 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     (pl.col('Physical-Weight')/pl.col('CGAS-CGAS_Score')).alias('cgas_weight'),
                     (pl.col('PAQ_Total')/pl.col('CGAS-CGAS_Score')).alias('cgas_paq_total_1'),
                     (pl.col('SDS-SDS_Total_T')/pl.col('CGAS-CGAS_Score')).alias('cgas_sds_total_1'),
-                    (pl.col('CGAS-CGAS_Score')/pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('cgas_intenet_1'),
+                    (pl.col('CGAS-CGAS_Score')/(1 + pl.col('PreInt_EduHx-computerinternet_hoursday'))).alias('cgas_intenet_1'),
                     (pl.col('PAQ_Total')*pl.col('CGAS-CGAS_Score')).alias('cgas_paq_total_2'),
                     (pl.col('SDS-SDS_Total_T')*pl.col('CGAS-CGAS_Score')).alias('cgas_sds_total_2'),
                     (pl.col('CGAS-CGAS_Score')*pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('cgas_intenet_2'),                ] +
                 ##Physical Measures
                 [
-                    (pl.col('Physical-BMI') / pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('phisical_BMI_Internet_Hours'),
-                    (pl.col('Physical-Height') / pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('phisical_height_Internet_Hours'),
-                    (pl.col('Physical-Weight') / pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('phisical_weight_Internet_Hours'),
+                    (pl.col('Physical-BMI') / (1 + pl.col('PreInt_EduHx-computerinternet_hoursday'))).alias('phisical_BMI_Internet_Hours'),
+                    (pl.col('Physical-Height') / (1 + pl.col('PreInt_EduHx-computerinternet_hoursday'))).alias('phisical_height_Internet_Hours'),
+                    (pl.col('Physical-Weight') / (1 + pl.col('PreInt_EduHx-computerinternet_hoursday'))).alias('phisical_weight_Internet_Hours'),
                     (pl.col('Physical-Systolic_BP')-pl.col('Physical-Diastolic_BP')).alias('phisical_Pulse_Pressure'),
                     (
                         (pl.col('Physical-Diastolic_BP'))/
@@ -53,7 +53,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 ##FitnessGram Vitals and Treadmill
                 [
                     (pl.col('Fitness_Endurance-Time_Mins')*60+pl.col('Fitness_Endurance-Time_Sec')).alias('fitnessgram_Fitness_Endurance-Time_Total'),
-                    (pl.col('Fitness_Endurance-Max_Stage')/pl.col('PreInt_EduHx-computerinternet_hoursday')).alias('fitnessgram_Fitness_Endurance_internet'),
+                    (pl.col('Fitness_Endurance-Max_Stage')/(1 + pl.col('PreInt_EduHx-computerinternet_hoursday'))).alias('fitnessgram_Fitness_Endurance_internet'),
                 ] +
                 
                 ##FitnessGram Child
