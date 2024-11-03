@@ -46,8 +46,14 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     (pl.col('Physical-Weight') / (1 + pl.col('PreInt_EduHx-computerinternet_hoursday'))).alias('phisical_weight_Internet_Hours'),
                     (pl.col('Physical-Systolic_BP')-pl.col('Physical-Diastolic_BP')).alias('phisical_Pulse_Pressure'),
                     (
-                        (pl.col('Physical-Diastolic_BP'))/
-                        ((pl.col('Physical-Systolic_BP')-pl.col('Physical-Diastolic_BP'))/3)
+                        pl.when(
+                            pl.col('Physical-Systolic_BP') != pl.col('Physical-Systolic_BP')
+                        )
+                        .then(
+                            (pl.col('Physical-Diastolic_BP'))/
+                            ((pl.col('Physical-Systolic_BP')-pl.col('Physical-Diastolic_BP'))/3)
+                        )
+                        .otherwise(None)
                     ).alias('phisical_Mean_Arterial_Pressure')
                 ] +                
                 ##FitnessGram Vitals and Treadmill
@@ -90,26 +96,35 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 
                 ##Bio-electric Impedance Analysis
                 [
-                    (pl.col('BIA-BIA_Fat') / pl.col('BIA-BIA_BMI')).alias('bio_BFP_BMI'),
-                    (pl.col('BIA-BIA_FFMI') / pl.col('BIA-BIA_Fat')).alias('bio_FFMI_BFP'),
-                    (pl.col('BIA-BIA_FMI') / pl.col('BIA-BIA_Fat')).alias('bio_FMI_BFP'),
-                    (pl.col('BIA-BIA_LST') / pl.col('BIA-BIA_TBW')).alias('bio_LST_TBW'),
+                    (pl.col('BIA-BIA_Fat') / (1 + pl.col('BIA-BIA_BMI'))).alias('bio_BFP_BMI'),
+                    (pl.col('BIA-BIA_FFMI') / (1 + pl.col('BIA-BIA_Fat'))).alias('bio_FFMI_BFP'),
+                    (pl.col('BIA-BIA_FMI') / (1 + pl.col('BIA-BIA_Fat'))).alias('bio_FMI_BFP'),
+                    (pl.col('BIA-BIA_LST') / (1 + pl.col('BIA-BIA_TBW'))).alias('bio_LST_TBW'),
                     (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_BMR')).alias('bio_BFP_BMR'),
                     (pl.col('BIA-BIA_Fat') * pl.col('BIA-BIA_DEE')).alias('bio_BFP_DEE'),
-                    (pl.col('BIA-BIA_SMM') / pl.col('BIA-BIA_FMI')).alias('bio_Muscle_to_Fat'),
-                    (pl.col('BIA-BIA_ICW') / pl.col('BIA-BIA_TBW')).alias('bio_ICW_TBW'),
+                    (
+                        pl.when(
+                            pl.col('BIA-BIA_FMI') == 0
+                        )
+                        .then(None)
+                        .otherwise(
+                         pl.col('BIA-BIA_SMM') / pl.col('BIA-BIA_FMI')
+                        )
+                        .alias('bio_Muscle_to_Fat')
+                    ),
+                    (pl.col('BIA-BIA_ICW') / (1 + pl.col('BIA-BIA_TBW'))).alias('bio_ICW_TBW'),
                     
-                    (pl.col('BIA-BIA_ECW') / pl.col('BIA-BIA_ICW')).alias('bio_Water_Balance_Ratio'),
-                    (pl.col('BIA-BIA_BMR') / pl.col('Physical-Weight')).alias('bio_BMR_Weight'),
+                    (pl.col('BIA-BIA_ECW') / (1 + pl.col('BIA-BIA_ICW'))).alias('bio_Water_Balance_Ratio'),
+                    (pl.col('BIA-BIA_BMR') / (1 + pl.col('Physical-Weight'))).alias('bio_BMR_Weight'),
                     
-                    (pl.col('BIA-BIA_DEE') / pl.col('Physical-Weight')).alias('bio_DEE_Weight'),
-                    (pl.col('BIA-BIA_SMM') / pl.col('Physical-Height')).alias('bio_SMM_Height'),
-                    (pl.col('BIA-BIA_TBW') / pl.col('Physical-Weight')).alias('bio_Hydration_Status'),
+                    (pl.col('BIA-BIA_DEE') / (1 + pl.col('Physical-Weight'))).alias('bio_DEE_Weight'),
+                    (pl.col('BIA-BIA_SMM') / (1 + pl.col('Physical-Height'))).alias('bio_SMM_Height'),
+                    (pl.col('BIA-BIA_TBW') / (1 + pl.col('Physical-Weight'))).alias('bio_Hydration_Status'),
                 ] +
                 ## Physical Activity Questionnaire - Sleep Disturbance Scale
                 [
                     (
-                       pl.col('PAQ_Total')/pl.col('SDS-SDS_Total_T')
+                       pl.col('PAQ_Total')/(1 + pl.col('SDS-SDS_Total_T'))
                     ).alias('sleep_activit_sleep_interaction_1'),
                     (
                        pl.col('PAQ_Total')*pl.col('SDS-SDS_Total_T')
