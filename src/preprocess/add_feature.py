@@ -212,6 +212,9 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
             ]
         
         self.time_series: pl.LazyFrame = pl.concat(self.time_series_list).lazy()
+        self.preprocess_logger.info(
+            f'{len(self._get_col_name(self.time_series))-1} time series columns'
+        )
         del self.time_series_list
 
         _ = gc.collect()
