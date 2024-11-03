@@ -143,12 +143,10 @@ class XgbTrainer(ModelTrain, XgbInit):
 
         train_target = train_filtered.select(self.target_col).collect().to_pandas().to_numpy('int').reshape((-1))
         test_target = test_filtered.select(self.target_col).collect().to_pandas().to_numpy('int').reshape((-1))
-        ordinal_train_target = get_ordinal_target(target_array=train_target, num_target=self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'])
-        ordinal_test_target = get_ordinal_target(target_array=test_target, num_target=self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'])
         
         train_matrix = xgb.DMatrix(
             train_filtered.select(self.feature_list).collect().to_pandas().to_numpy(self.feature_precision),
-            ordinal_train_target,
+            train_target,
             feature_names=self.feature_list, enable_categorical=True, 
             feature_types=[
                 (
@@ -160,7 +158,7 @@ class XgbTrainer(ModelTrain, XgbInit):
         )
         test_matrix = xgb.DMatrix(
             test_filtered.select(self.feature_list).collect().to_pandas().to_numpy(self.target_precision),
-            ordinal_test_target,
+            test_target,
             feature_names=self.feature_list, enable_categorical=True, 
             feature_types=[
                 (
