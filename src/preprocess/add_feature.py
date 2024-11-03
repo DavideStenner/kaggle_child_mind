@@ -139,75 +139,122 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 ]
             )
         )
+    def __get_single_time_series_df(self, pl_dataframe: pl.LazyFrame) -> pl.DataFrame:
+        def get_list_operation(name_suffix: str) -> list[pl.Expr]:
+            return (
+                [self.config_dict['ID_COL']] +
+                [
+                    (
+                        pl.col(col)
+                        .min()
+                        .over('relative_date_PCIAT')
+                        .alias(f'time_series_{col}_min_{name_suffix}')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .max()
+                        .over('relative_date_PCIAT')
+                        .alias(f'time_series_{col}_max_{name_suffix}')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .mean()
+                        .over('relative_date_PCIAT')
+                        .alias(f'time_series_{col}_mean_{name_suffix}')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .median()
+                        .over('relative_date_PCIAT')
+                        .alias(f'time_series_{col}_median_{name_suffix}')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .std()
+                        .over('relative_date_PCIAT')
+                        .alias(f'time_series_{col}_std_{name_suffix}')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ]
+            )
+
+        pl_dataframe = pl_dataframe.with_columns(
+            (pl.col('X').pow(2) + pl.col('Y').pow(2)).sqrt().alias('2d_norm')
+        )
+        self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'].append('2d_norm')
+        
+        id_df_result = (
+            pl_dataframe
+            .select(
+                pl.col(self.config_dict['ID_COL']).unique()
+            )
+        )
+        result_df_to_join: list[pl.LazyFrame] = []
+        result_df_to_join.append(
+            pl_dataframe
+            .clone()
+            .select(
+                [
+                    self.config_dict['ID_COL'],                    
+                    pl.col('non-wear_flag').sum().over('relative_date_PCIAT').alias('time_series_non-wear_flag_mean'),
+                    'weekday', 'quarter'
+                ]
+            )
+            .group_by(self.config_dict['ID_COL'])
+            .agg(
+                pl.col('time_series_non-wear_flag_mean').mean(),
+                    pl.col('weekday').min().alias('time_series_weekday_min'),
+                    pl.col('weekday').max().alias('time_series_weekday_max'),
+                    pl.col('weekday').mean().alias('time_series_weekday_mean'),
+                    pl.col('quarter').min().alias('time_series_quarter_min'),
+                    pl.col('quarter').max().alias('time_series_quarter_max'),
+                    pl.col('quarter').mean().alias('time_series_quarter_mean'),
+            )
+        )
+        for name_suffix, pl_filter in [
+            ['all', True],
+            ['weekend', pl.col('weekday')>=6],
+        ]:
+            result_df_to_join.append(
+                pl_dataframe
+                .clone()
+                .filter(pl.col('non-wear_flag')==0)
+                .filter(pl_filter)
+                .select(
+                    get_list_operation(name_suffix)
+                )
+                .group_by(self.config_dict['ID_COL'])
+                .agg(
+                    pl.all().mean()
+                )
+            )
+        
+        for df_ in result_df_to_join:
+            id_df_result = id_df_result.join(
+                df_, 
+                on=self.config_dict['ID_COL'], 
+                how='left'
+            )
+            
+        id_df_result = id_df_result.collect()
+        
+        return id_df_result
+    
     def __create_time_series_feature(self) -> None:
         self.time_series_list: list[pl.DataFrame] = [
-                (
-                    pl_dataframe
-                    .group_by(self.config_dict['ID_COL'])
-                    .agg(
-                        [
-                            (
-                                pl.col(col)
-                                .filter(pl.col('non-wear_flag')==0)
-                                .count()
-                                .alias(f'time_series_{col}_count')
-                            )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                        ] +
-                        [
-                            (
-                                pl.col(col)
-                                .filter(pl.col('non-wear_flag')==0)
-                                .min()
-                                .alias(f'time_series_{col}_min')
-                            )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'] + [
-                                'weekday', 'quarter'
-                            ]
-                        ] +
-                        [
-                            (
-                                pl.col(col)
-                                .filter(pl.col('non-wear_flag')==0)
-                                .max()
-                                .alias(f'time_series_{col}_max')
-                            )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'] + [
-                                'weekday', 'quarter'
-                            ]
-                        ] +
-                        [
-                            (
-                                pl.col(col)
-                                .filter(pl.col('non-wear_flag')==0)
-                                .mean()
-                                .alias(f'time_series_{col}_mean')
-                            )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'] + [
-                                'weekday', 'quarter'
-                            ]
-                        ] +
-                        [
-                            (
-                                pl.col(col)
-                                .filter(pl.col('non-wear_flag')==0)
-                                .median()
-                                .alias(f'time_series_{col}_median')
-                            )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                        ] +
-                        [
-                            (
-                                pl.col(col)
-                                .filter(pl.col('non-wear_flag')==0)
-                                .std()
-                                .alias(f'time_series_{col}_std')
-                            )
-                            for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                        ]
-                    )
-                    .collect()
-                )
+                self.__get_single_time_series_df(pl_dataframe=pl_dataframe)
                 for pl_dataframe in tqdm(self.time_series_list, total=len(self.time_series_list)) 
             ]
         
