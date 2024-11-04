@@ -173,6 +173,15 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 [
                     (
                         pl.col(col)
+                        .median()
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
+                        .alias(f'time_series_{col}_median_{name_suffix}')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
                         .std()
                         .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
                         .alias(f'time_series_{col}_std_{name_suffix}')
