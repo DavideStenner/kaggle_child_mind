@@ -241,8 +241,15 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 ] +
                 #other custom
                 [
-                    #night features
-                    (pl.col('light').filter(get_time_mask('night'))<50).sum().alias('time_series_good_sleep_light')
+                    #light features
+                    (pl.col('light').filter(get_time_mask('morning'))<50).sum().alias('time_series_morning_dark'),
+                    (pl.col('light').filter(get_time_mask('morning'))>100).sum().alias('time_series_morning_light'),
+                    (pl.col('light').filter(get_time_mask('afternoon'))<50).sum().alias('time_series_afternoon_light'),
+                    (pl.col('light').filter(get_time_mask('afternoon'))>100).sum().alias('time_series_afternoon_light'),
+                    (pl.col('light').filter(get_time_mask('evening'))<50).sum().alias('time_series_evening_dark'),
+                    (pl.col('light').filter(get_time_mask('evening'))>100).sum().alias('time_series_evening_light'),
+                    (pl.col('light').filter(get_time_mask('night'))<50).sum().alias('time_series_night_dark'),
+                    (pl.col('light').filter(get_time_mask('night'))>100).sum().alias('time_series_night_light'),
                 ] +
                 [
                     pl.col(features_).filter(pl.col('hour')==hour_).mean().alias(f'time_series_{features_}_hour_{hour_}_mean')
