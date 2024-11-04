@@ -147,7 +147,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     (
                         pl.col(col)
                         .min()
-                        .over('relative_date_PCIAT')
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
                         .alias(f'time_series_{col}_min_{name_suffix}')
                     )
                     for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
@@ -156,7 +156,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     (
                         pl.col(col)
                         .max()
-                        .over('relative_date_PCIAT')
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
                         .alias(f'time_series_{col}_max_{name_suffix}')
                     )
                     for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
@@ -165,7 +165,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     (
                         pl.col(col)
                         .mean()
-                        .over('relative_date_PCIAT')
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
                         .alias(f'time_series_{col}_mean_{name_suffix}')
                     )
                     for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
@@ -173,17 +173,8 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 [
                     (
                         pl.col(col)
-                        .median()
-                        .over('relative_date_PCIAT')
-                        .alias(f'time_series_{col}_median_{name_suffix}')
-                    )
-                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                ] +
-                [
-                    (
-                        pl.col(col)
                         .std()
-                        .over('relative_date_PCIAT')
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
                         .alias(f'time_series_{col}_std_{name_suffix}')
                     )
                     for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
@@ -208,7 +199,12 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
             .select(
                 [
                     self.config_dict['ID_COL'],                    
-                    pl.col('non-wear_flag').sum().over('relative_date_PCIAT').alias('time_series_non-wear_flag_mean'),
+                    (
+                        pl.col('non-wear_flag')
+                        .sum()
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
+                        .alias('time_series_non-wear_flag_mean')
+                    ),
                     'weekday', 'quarter'
                 ]
             )
