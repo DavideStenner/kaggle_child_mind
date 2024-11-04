@@ -2,7 +2,7 @@ import gc
 import polars as pl
 
 from tqdm import tqdm
-
+from itertools import product
 from src.base.preprocess.add_feature import BaseFeature
 from src.preprocess.initialize import PreprocessInit
 
@@ -180,8 +180,17 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
                 ]
             )
+        def get_time_mask(time: str) -> pl.Expr:
+            mask_dict = {
+                'morning': (pl.col('hour') >= 6) & (pl.col('hour') < 12),
+                'afternoon': (pl.col('hour') >= 12) & (pl.col('hour') < 18),
+                'evening': (pl.col('hour') >= 18) & (pl.col('hour') < 22),
+                'night': (pl.col('hour') >= 22) | (pl.col('hour') < 6)
+            }
+            return mask_dict[time]
 
         pl_dataframe = pl_dataframe.with_columns(
+            (pl.col('time_of_day').dt.hour()).alias('hour'),
             (pl.col('X').pow(2) + pl.col('Y').pow(2)).sqrt().alias('2d_norm')
         )
         self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'].append('2d_norm')
@@ -192,6 +201,10 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 pl.col(self.config_dict['ID_COL']).unique()
             )
         )
+        time_mask_list: list[tuple[str, pl.Expr]] = [
+            [filter_, get_time_mask(filter_)]
+            for filter_ in ['morning', 'afternoon', 'evening', 'night']
+        ]
         result_df_to_join: list[pl.LazyFrame] = []
         result_df_to_join.append(
             pl_dataframe
@@ -206,23 +219,49 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                         .alias('time_series_non-wear_flag_mean')
                     ),
                     'weekday', 'quarter'
+                ] +
+                [
+                    (
+                        pl.col('non-wear_flag')
+                        .filter(pl_filter)
+                        .sum()
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
+                        .alias(f'time_series_non-wear_flag_{filter_name}_mean')
+                    )
+                    for filter_name, pl_filter in time_mask_list
+                ] +
+                #other custom
+                [
+                    #night features
+                    (pl.col('light').filter(get_time_mask('night'))<50).sum().alias('time_series_good_sleep_light')
+                ] +
+                [
+                    pl.col(features_).filter(pl.col('hour')==hour_).mean().alias(f'time_series_{features_}_hour_{hour_}_mean')
+                    for features_, hour_ in product(
+                        self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'],
+                        range(24)
+                    )
                 ]
             )
             .group_by(self.config_dict['ID_COL'])
             .agg(
-                pl.col('time_series_non-wear_flag_mean').mean(),
-                    pl.col('weekday').min().alias('time_series_weekday_min'),
-                    pl.col('weekday').max().alias('time_series_weekday_max'),
-                    pl.col('weekday').mean().alias('time_series_weekday_mean'),
-                    pl.col('quarter').min().alias('time_series_quarter_min'),
-                    pl.col('quarter').max().alias('time_series_quarter_max'),
-                    pl.col('quarter').mean().alias('time_series_quarter_mean'),
+                pl.exclude(['weekday', 'quarter']).mean(),
+                pl.col('weekday').min().alias('time_series_weekday_min'),
+                pl.col('weekday').max().alias('time_series_weekday_max'),
+                pl.col('weekday').mean().alias('time_series_weekday_mean'),
+                pl.col('quarter').min().alias('time_series_quarter_min'),
+                pl.col('quarter').max().alias('time_series_quarter_max'),
+                pl.col('quarter').mean().alias('time_series_quarter_mean')
             )
         )
-        for name_suffix, pl_filter in [
-            ['all', True],
-            ['weekend', pl.col('weekday')>=6],
-        ]:
+        for name_suffix, pl_filter in (
+            [
+                ['all', True],
+                ['weekend', pl.col('weekday')>=6],
+                ['light', pl.col('light')>=100],
+            ] +
+            time_mask_list
+        ):
             result_df_to_join.append(
                 pl_dataframe
                 .clone()
