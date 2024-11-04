@@ -45,6 +45,7 @@ class PreprocessImport(BaseImport, PreprocessInit):
                 )
                 .with_columns(
                     [
+                        pl.col('time_of_day').cast(pl.Time),
                         pl.lit(id_name).alias(self.config_dict['ID_COL'])
                     ]
                 )
