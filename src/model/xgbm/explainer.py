@@ -1,5 +1,5 @@
 import os
-import re
+import shap
 import copy
 import numpy as np
 import polars as pl
@@ -9,11 +9,12 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
+from functools import partial
 from typing import Union, Tuple, Dict
 from sklearn.metrics import f1_score
 from src.model.xgbm.initialize import XgbInit
 from src.model.metric.utils import get_ordinal_target
-from src.model.metric.official_metric import xgb_quadratic_kappa, xgb_ordinal_kappa
+from src.model.metric.official_metric import quadratic_weighted_kappa_tresh, xgb_ordinal_kappa
 
 class XgbExplainer(XgbInit):       
     def plot_train_curve(self, 
@@ -173,8 +174,10 @@ class XgbExplainer(XgbInit):
             )
 
             feature_importances[f'fold_{fold_}'] = (
-                feature_importances['feature'].map(importance_dict)
-            ).fillna(0)
+                feature_importances['feature']
+                .map(importance_dict)
+                .fillna(0)
+            )
 
         feature_importances['average'] = feature_importances[
             [f'fold_{fold_}' for fold_ in range(self.n_fold)]
@@ -208,7 +211,44 @@ class XgbExplainer(XgbInit):
             ),
             index=False
         )
-    
+
+    def __get_list_of_oof_dataset(self) -> list[Tuple[pd.DataFrame, np.ndarray]]:
+        list_dataset: list[Tuple[pd.DataFrame, np.ndarray]] = []
+        
+        for fold_ in range(self.n_fold):
+            fold_data = (
+                pl.read_parquet(
+                    os.path.join(
+                        self.config_dict['PATH_GOLD_DATA'],
+                        f'data.parquet'
+                    )
+                )
+                .with_columns(
+                    (
+                        pl.col('fold_info').str.split(', ')
+                        .list.get(fold_).alias('current_fold')
+                    )
+                )
+                .filter(
+                    (pl.col('current_fold') == 'v')
+                )
+            )
+            test_feature = (
+                fold_data
+                .select(self.feature_list)
+                .to_pandas()
+            )
+            
+            test_target = (
+                fold_data
+                .select(self.target_col)
+                .to_pandas()
+                .to_numpy('int').reshape((-1))
+            )
+            list_dataset.append([test_feature, test_target])
+        
+        return list_dataset
+
     def __calculate_score(self, y_pred:np.ndarray, y_true=np.ndarray) -> float:
         return xgb_ordinal_kappa(y_true=y_true, y_pred=y_pred)
     
@@ -243,7 +283,7 @@ class XgbExplainer(XgbInit):
 
         return score_oof
 
-    def __get_list_of_oof_dataset(self) -> list[Tuple[pd.DataFrame, pd.DataFrame]]:
+    def __get_list_of_ordinal_oof_dataset(self) -> list[Tuple[pd.DataFrame, pd.DataFrame]]:
         list_dataset: list[Tuple[pd.DataFrame, pd.DataFrame]] = []
         
         for fold_ in range(self.n_fold):
@@ -305,7 +345,7 @@ class XgbExplainer(XgbInit):
         model_list: list[xgb.Booster] = self.load_pickle_model_list(
             model_type=model_type
         )
-        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_oof_dataset()
+        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_ordinal_oof_dataset()
         best_epoch: int = self.load_best_result(model_type=model_type)['best_epoch']
         
         base_score: float = self.__oof_score(
@@ -357,9 +397,176 @@ class XgbExplainer(XgbInit):
             ), 
             index=False
         )
-    
-    def get_oof_insight(self) -> None:
-        pass
 
+
+    def oof_get_best_treshold(self) -> None:
+        self.set_postprocess_utils()
+        self.training_logger.info(f'{len(self.list_treshold_value)} postprocess treshold combinations')
+        dataset_list: list[Tuple[pd.DataFrame, pd.DataFrame]] = self.__get_list_of_oof_dataset()
+
+        for model_type in self.model_used:
+            model_list: list[xgb.Booster] = self.load_pickle_model_list(
+                model_type=model_type, 
+            )
+            best_result: dict[str, any] = self.load_best_result(model_type=model_type)
+            
+            best_epoch: int = best_result['best_epoch']
+
+            result_by_combination: np.ndarray = np.zeros(len(self.list_treshold_value))
+            
+            self.training_logger.info(f'Starting {model_type} treshold postprocess')
+
+            for fold_, (test_feature, test_target) in enumerate(dataset_list):
+                pred_target = model_list[fold_].predict(
+                    data=test_feature.to_numpy('float64'),
+                    num_iteration = best_epoch
+                )
+                treshold_iterator = tqdm(self.list_treshold_value, total=len(self.list_treshold_value))
+                
+                #partial for efficiency
+                partial_kappa = partial(
+                    quadratic_weighted_kappa_tresh,
+                    y_true=test_target,
+                    y_pred=pred_target
+                )
+                result_fold = np.array(
+                    [
+                        partial_kappa(
+                            treshold_combination_
+                        )/self.n_fold
+                        for treshold_combination_ in treshold_iterator
+                    ]
+                )
+                result_by_combination += result_fold
+            
+            #find best
+            idx_best_combination = np.argmax(result_by_combination)
+            
+            best_score = result_by_combination[idx_best_combination]
+            best_combination = self.list_treshold_value[idx_best_combination]
+            
+            base_cv_score = best_result['best_score']
+            increment_score = best_score - base_cv_score
+            
+            self.training_logger.info(
+                f'Best treshold combination for {model_type} with optimized score of {best_score:.6f} with an increment of {increment_score:.6f}:'
+            )
+            self.training_logger.info(
+                f'T1: {best_combination[0]}\nT2: {best_combination[1]}\nT3: {best_combination[2]}'
+            )
+            best_result['treshold_optim'] = {
+                'best_score': best_score,
+                'best_combination': best_combination
+            }
+            
+            self.save_best_result(
+                best_result=best_result, model_type=model_type, 
+            )
+
+    def oof_get_shap_contribution(self) -> None:
+        np.seterr(invalid='ignore')
+        
+        self.training_logger.info('Starting shap calculation')        
+        dataset_list: list[Tuple[pd.DataFrame, np.ndarray]] = self.__get_list_of_oof_dataset()
+
+        for model_type in self.model_used:
+            self.load_used_feature(model_type=model_type)
+
+            model_list: list[xgb.Booster] = self.load_pickle_model_list(
+                model_type=model_type, 
+            )
+            best_result: dict[str, any] = self.load_best_result(model_type=model_type)
+            best_epoch: int = best_result['best_epoch']
+            
+            shap_list: list[np.ndarray] = []
+            data_list: list[np.ndarray] = []
+            shap_insight: pd.DataFrame = pd.DataFrame(
+                {
+                    'feature': self.feature_list
+                }
+            )            
+            for fold_, (test_feature, _) in enumerate(dataset_list):          
+                shap_values = model_list[fold_].predict(
+                    test_feature, 
+                    num_iteration=best_epoch, pred_contrib=True
+                )[:, :-1]
+                
+                data_list.append(test_feature)
+                shap_list.append(shap_values)
+                shap_insight[f'imp_shap_fold_{fold_}'] = np.abs(shap_values).mean(axis=0)
+            
+            shap_values = np.concatenate(shap_list, axis=0)
+            data_values = np.concatenate(data_list, axis=0)
+            shap_insight[f'mean_imp_shap'] = shap_insight[
+                [f'imp_shap_fold_{fold_}' for fold_ in range(self.n_fold)]
+            ].mean(axis=1)
+        
+            (
+                shap_insight
+                .sort_values('mean_imp_shap', ascending=False)
+                .reset_index(drop=True)
+                .to_excel(
+                    os.path.join(
+                        self.experiment_path_dict['feature_importance'].format(model_type=model_type), 
+                        'shap_importance.xlsx'
+                    ),
+                    index=False
+                )
+            )
+                
+            #shap
+            fig = plt.figure()
+            shap.summary_plot(
+                shap_values, data_values,
+                [
+                    col[:30] for col in self.feature_list
+                ],
+                show=False, 
+                max_display=30
+            )
+            plt.savefig(
+                os.path.join(
+                    self.experiment_path_dict['insight'].format(model_type=model_type),
+                    f'shap_insight.png'
+                )
+            )
+            plt.close(fig)
+
+            #begin for data with time series
+            idx_row_with_time_series: np.ndarray = (
+                np.logical_not(
+                    np.isnan(
+                        data_values[
+                            :,
+                            ['time_series_' == col[:12] for col in self.feature_list]
+                        ]
+                    )
+                ).sum(axis=1)>0
+            )
+
+            if any(idx_row_with_time_series):
+                #shap
+                fig = plt.figure()
+                shap.summary_plot(
+                    shap_values[idx_row_with_time_series, :], data_values[idx_row_with_time_series, :],
+                    [
+                        col[:30] for col in self.feature_list
+                    ],
+                    show=False, 
+                    max_display=30
+                )
+                plt.savefig(
+                    os.path.join(
+                        self.experiment_path_dict['insight'].format(model_type=model_type),
+                        f'shap_insight_ts.png'
+                    )
+                )
+                plt.close(fig)
+            
+        np.seterr(invalid='warn')
+
+    def get_oof_insight(self) -> None:
+        self.oof_get_best_treshold()
+        
     def get_oof_prediction(self) -> None:
-        pass
+        self.oof_get_shap_contribution()

@@ -40,11 +40,15 @@ if __name__=='__main__':
         from src.model.xgbm.pipeline import XgbPipeline
 
         params_model, experiment_name = import_params(model='xgb')
+        pipeline_params = import_json('config/params_pipeline.json')
+        
+        updated_config = config_dict.copy()
+        updated_config.update(pipeline_params)
 
         trainer = XgbPipeline(
             experiment_name=experiment_name + "_xgb",
             params_xgb=params_model,
-            config_dict=config_dict,
+            config_dict=updated_config,
             evaluate_shap=False,
         )
         trainer.train_explain()

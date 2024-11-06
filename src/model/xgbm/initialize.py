@@ -3,12 +3,12 @@ import json
 import pickle
 import logging
 
-import pandas as pd
+import numpy as np
 import polars as pl
 import xgboost as xgb
 
-from itertools import chain, product
 from typing import Any, Union, Dict, Tuple
+from itertools import combinations
 from src.base.model.initialize import ModelInit
 from src.utils.logging_utils import get_logger
 
@@ -52,6 +52,9 @@ class XgbInit(ModelInit):
             ),
             'model': os.path.join(
                 self.experiment_model_path, 'model'
+            ),
+            'pseudo_labeling': os.path.join(
+                self.experiment_model_path, 'pseudo_labeling'
             )
         }
 
@@ -62,7 +65,8 @@ class XgbInit(ModelInit):
         self.params_xgb: dict[str, Any] = params_xgb
         
         self.feature_list: list[str] = []
-        
+        self.original_path_gold: str = self.config_dict['PATH_GOLD_DATA']
+
         self.get_categorical_columns()
         self.initialize_model_utils()
         self.get_model_file_name_dict()
@@ -102,6 +106,19 @@ class XgbInit(ModelInit):
                 self, f'progress_{model_type}_list', [] 
             )
 
+    def set_postprocess_utils(self) -> None:
+        max_range: int = (
+            self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'] if
+            self.config_dict['COLUMN_INFO']['TARGET'] == 'sii'
+            else 80
+        )
+        total_grid = np.linspace(0, max_range+1, 50)
+
+        self.list_treshold_value: list[list[float]] = list(
+            combinations(total_grid, 3)
+        )
+                                
+
                     
     def get_categorical_columns(self) -> None:
         #load all possible categorical feature
@@ -134,23 +151,43 @@ class XgbInit(ModelInit):
     def get_model_file_name_dict(self) -> None:
         self.model_file_name_dict: dict[str, str] =  {
             'progress_list': {
-                model_type: f'progress_{model_type}_list.pkl'
+                model_type: 'progress_list.pkl'
                 for model_type in self.model_used
             },
             'best_result': {
-                model_type: f'best_result_{model_type}_xgb.txt'
+                model_type: 'best_result_xgb.txt'
                 for model_type in self.model_used
             },
             'model_pickle_list': {
-                model_type: f'model_{model_type}_list_xgb.pkl'
+                model_type: 'model_list_xgb.pkl'
                 for model_type in self.model_used
             },
             'model_list': {
-                model_type: f'xgb_{model_type}' + '_{fold_}.json'
+                model_type: 'xgb_{fold_}.json'
                 for model_type in self.model_used
             }
         }
-    
+
+    def load_best_pseudo_result(self) -> dict[str, any]:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'best_pseudo_result.json'
+            ), 'r'
+        ) as file:
+            best_result = json.load(file)
+            
+        return best_result
+
+    def save_best_pseudo_result(self, pseudo_result: dict[str, any]) -> None:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'best_pseudo_result.json'
+            ), 'w'
+        ) as file:
+            json.dump(pseudo_result, file)
+
     def save_progress_list(self, progress_list: list, model_type: str) -> None:
         with open(
             os.path.join(
