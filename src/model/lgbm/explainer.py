@@ -378,24 +378,25 @@ class LgbmExplainer(LgbmInit):
                     )
                 ).sum(axis=1)>0
             )
-            
-            #shap
-            fig = plt.figure()
-            shap.summary_plot(
-                shap_values[idx_row_with_time_series, :], data_values[idx_row_with_time_series, :],
-                [
-                    col[:30] for col in self.feature_list
-                ],
-                show=False, 
-                max_display=30
-            )
-            plt.savefig(
-                os.path.join(
-                    self.experiment_path_dict['insight'].format(model_type=model_type),
-                    f'shap_insight_ts.png'
+
+            if any(idx_row_with_time_series):
+                #shap
+                fig = plt.figure()
+                shap.summary_plot(
+                    shap_values[idx_row_with_time_series, :], data_values[idx_row_with_time_series, :],
+                    [
+                        col[:30] for col in self.feature_list
+                    ],
+                    show=False, 
+                    max_display=30
                 )
-            )
-            plt.close(fig)
+                plt.savefig(
+                    os.path.join(
+                        self.experiment_path_dict['insight'].format(model_type=model_type),
+                        f'shap_insight_ts.png'
+                    )
+                )
+                plt.close(fig)
             
         np.seterr(invalid='warn')
 

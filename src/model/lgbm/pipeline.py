@@ -43,7 +43,7 @@ class LgbmPipeline(ModelPipeline, LgbmTrainer, LgbmExplainer, LgbmInference):
         ]
         pseudo_experiment_name_list: list[str] = [model_type]
         
-        for _ in range(5):
+        for _ in range(self.config_dict['n_pseudo']):
             model_type = self.begin_pseudo_label(model_type=model_type)
             self.create_experiment_structure()
             self.run_train()
@@ -75,4 +75,7 @@ class LgbmPipeline(ModelPipeline, LgbmTrainer, LgbmExplainer, LgbmInference):
         self.initialize_logger()
         self.run_train()
         self.explain_model()
-        self.pseudo_label_train()
+        
+        if 'n_pseudo' in self.config_dict.keys():
+            if self.config_dict['n_pseudo'] > 0:
+                self.pseudo_label_train()

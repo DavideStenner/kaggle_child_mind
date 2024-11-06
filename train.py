@@ -3,8 +3,7 @@ if __name__=='__main__':
     import warnings
     import matplotlib.pyplot as plt
 
-    from src.utils.import_utils import import_config, import_params
-    from src.preprocess.pipeline import PreprocessPipeline
+    from src.utils.import_utils import import_config, import_params, import_json
 
     #filter useless warning
     warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -24,12 +23,16 @@ if __name__=='__main__':
         from src.model.lgbm.pipeline import LgbmPipeline
         
         params_model, experiment_name = import_params(model='lgb')
-    
+        pipeline_params = import_json('config/params_pipeline.json')
+        
+        updated_config = config_dict.copy()
+        updated_config.update(pipeline_params)
+        
         trainer = LgbmPipeline(
             experiment_name=experiment_name + "_lgb",
             params_lgb=params_model,
-            config_dict=config_dict,
-            evaluate_shap=False,
+            config_dict=updated_config,
+            evaluate_shap=False
         )
         trainer.train_explain()
         
