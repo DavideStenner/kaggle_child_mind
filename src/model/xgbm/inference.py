@@ -17,20 +17,54 @@ class XgbInference(ModelPredict, XgbInit):
         )
         return dmatrix
         
-    def blend_model_predict(self, test_data: pl.DataFrame) -> np.ndarray:             
+    def blend_model_predict(self, test_data: pl.DataFrame, model_list: list[xgb.Booster], epoch: int) -> np.ndarray:             
         prediction_ = np.zeros((test_data.shape[0]), dtype='float64')
         test_data = self.load_feature_data(test_data)
         
-        for model in self.model_list:
-            prediction_ += model.predict(
+        for iter, model in enumerate(model_list):
+            prediction_model = model.predict(
                 test_data,
-                iteration_range = (0, self.best_result['best_epoch'])
+                iteration_range = (0, epoch)
             )/self.n_fold
+
+            if iter==0:
+                prediction_ = prediction_model
+            else:
+                prediction_ = np.add(prediction_, prediction_model)
             
         return prediction_
     
-    def predict(self, test_data: pl.DataFrame) -> np.ndarray:
+    def predict(self, model_type: str, test_data: pl.DataFrame) -> np.ndarray:
         assert self.inference
+
+        self.load_used_feature(model_type=model_type)
+        self.load_used_categorical_feature(model_type=model_type)
+        self.load_best_result(model_type=model_type)
+        best_result = self.load_best_result(
+            model_type=model_type
+        )
         
-        prediction_ = self.blend_model_predict(test_data=test_data)
-        return prediction_
+        best_epoch = best_result['best_epoch']
+        best_combination = best_result['treshold_optim']['best_combination']
+        model_list: list[xgb.Booster] = self.load_pickle_model_list(
+            model_type=model_type, 
+        )
+
+        prediction_ = self.blend_model_predict(
+            test_data=test_data, model_list=model_list, epoch=best_epoch
+        )
+        
+        rounded_prediciton_ = (
+            np.where(
+                prediction_ < best_combination[0], 0,
+                np.where(
+                    prediction_ < best_combination[1], 1,
+                        np.where(
+                            prediction_ < best_combination[2], 2, 
+                            3
+                        )
+                    )
+            )
+        )
+            
+        return rounded_prediciton_
