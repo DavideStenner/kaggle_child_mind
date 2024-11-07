@@ -52,7 +52,3 @@ if __name__=='__main__':
             evaluate_shap=False,
         )
         trainer.train_explain()
-        
-        
-    elif (args.model == 'nn') | (args.all_model):
-        raise NotImplementedError
