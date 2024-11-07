@@ -61,7 +61,7 @@ class XgbTrainer(ModelTrain, XgbInit):
             dtrain=train_matrix, 
             num_boost_round=params_xgb['num_boost_round'],
             evals=[(test_matrix, 'valid')],
-            evals_result=progress, verbose_eval=50,
+            evals_result=progress, verbose_eval=100,
             custom_metric=xgb_quadratic_kappa
         )
 
@@ -267,11 +267,12 @@ class XgbTrainer(ModelTrain, XgbInit):
             pseudo_test = test_data.to_pandas().copy(deep=True)
             
             oof_prediction: np.ndarray = model_list[fold_].predict(
-                 (
+                xgb.DMatrix(
                     pseudo_null[self.feature_list]
-                    .to_numpy(self.feature_precision)
+                    .to_numpy(self.feature_precision),
+                    feature_names=self.feature_list
                 ),
-                num_iteration=best_result_['best_epoch']
+                iteration_range=(0, best_result_['best_epoch'])
             )
             pseudo_null[self.target_col] = oof_prediction
             pseudo_null['fold_info'] = pseudo_train_current_fold

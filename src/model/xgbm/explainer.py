@@ -418,8 +418,8 @@ class XgbExplainer(XgbInit):
 
             for fold_, (test_feature, test_target) in enumerate(dataset_list):
                 pred_target = model_list[fold_].predict(
-                    data=test_feature.to_numpy('float64'),
-                    num_iteration = best_epoch
+                    data=xgb.DMatrix(test_feature.to_numpy(self.feature_precision), feature_names=self.feature_list),
+                    iteration_range = (0, best_epoch)
                 )
                 treshold_iterator = tqdm(self.list_treshold_value, total=len(self.list_treshold_value))
                 
@@ -487,8 +487,8 @@ class XgbExplainer(XgbInit):
             )            
             for fold_, (test_feature, _) in enumerate(dataset_list):          
                 shap_values = model_list[fold_].predict(
-                    test_feature, 
-                    num_iteration=best_epoch, pred_contrib=True
+                    xgb.DMatrix(test_feature, feature_names=self.feature_list), 
+                    iteration_range = (0, best_epoch), pred_contribs=True
                 )[:, :-1]
                 
                 data_list.append(test_feature)
