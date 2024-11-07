@@ -308,7 +308,9 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
         return id_df_result
     
     def __create_time_series_feature(self) -> None:
-        self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'].append('2d_norm')
+        if '2d_norm' not in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']:
+            self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'].append('2d_norm')
+        
         self.time_series_list: list[pl.DataFrame] = [
                 self.__get_single_time_series_df(pl_dataframe=pl_dataframe)
                 for pl_dataframe in tqdm(self.time_series_list, total=len(self.time_series_list)) 
