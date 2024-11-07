@@ -314,7 +314,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 for pl_dataframe in tqdm(self.time_series_list, total=len(self.time_series_list)) 
             ]
         
-        self.time_series: pl.LazyFrame = pl.concat(self.time_series_list).lazy()
+        self.time_series: pl.LazyFrame = pl.concat(self.time_series_list, how='vertical_relaxed').lazy()
         self.preprocess_logger.info(
             f'{len(self._get_col_name(self.time_series))-1} time series columns'
         )
