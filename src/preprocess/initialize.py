@@ -30,6 +30,14 @@ class PreprocessInit(BaseInit):
     def _initialize_other_info(self) -> None:
         self.id_col: str = self.config_dict['ID_COL']
         self.time_series_list: list[pl.LazyFrame] = []
+        self.total_5s_time_over_day: int = 17_280
+        
+        self.dict_total_5s_time_slice: dict[str, int] = {
+            'morning': 4_320,
+            'afternoon': 4_320,
+            'evening': 2_880,
+            'night': 5760
+        }
         
     def _initialize_preprocess_logger(self) -> None:
         self.preprocess_logger: logging.Logger = get_logger('preprocess.txt')
