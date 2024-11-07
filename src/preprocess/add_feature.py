@@ -252,7 +252,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     #light features
                     (pl.col('light').filter(get_time_mask('morning'))<50).sum().alias('time_series_morning_dark'),
                     (pl.col('light').filter(get_time_mask('morning'))>100).sum().alias('time_series_morning_light'),
-                    (pl.col('light').filter(get_time_mask('afternoon'))<50).sum().alias('time_series_afternoon_light'),
+                    (pl.col('light').filter(get_time_mask('afternoon'))<50).sum().alias('time_series_afternoon_dark'),
                     (pl.col('light').filter(get_time_mask('afternoon'))>100).sum().alias('time_series_afternoon_light'),
                     (pl.col('light').filter(get_time_mask('evening'))<50).sum().alias('time_series_evening_dark'),
                     (pl.col('light').filter(get_time_mask('evening'))>100).sum().alias('time_series_evening_light'),
