@@ -270,11 +270,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
             .group_by(self.config_dict['ID_COL'])
             .agg(
                 pl.exclude(['weekday', 'quarter']).mean(),
-                pl.col('weekday').min().alias('time_series_weekday_min'),
-                pl.col('weekday').max().alias('time_series_weekday_max'),
                 pl.col('weekday').mean().alias('time_series_weekday_mean'),
-                pl.col('quarter').min().alias('time_series_quarter_min'),
-                pl.col('quarter').max().alias('time_series_quarter_max'),
                 pl.col('quarter').mean().alias('time_series_quarter_mean')
             )
         )
