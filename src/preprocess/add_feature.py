@@ -219,7 +219,23 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                         .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
                         .alias('time_series_non-wear_flag_mean')
                     ),
+                    (
+                        (self.total_5s_time_over_day - pl.col('non-wear_flag').count())
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
+                        .alias('time_series_missing_data_mean')
+                    ),
                     'weekday', 'quarter'
+                ] +
+                [
+                    (
+                        (
+                            self.dict_total_5s_time_slice[filter_name] - 
+                            pl.col('non-wear_flag').filter(pl_filter).count()
+                        )
+                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
+                        .alias(f'time_series_missing_data_{filter_name}_mean')
+                    )
+                    for filter_name, pl_filter in time_mask_list
                 ] +
                 [
                     (
