@@ -189,11 +189,12 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
             }
             return mask_dict[time]
 
-        pl_dataframe = pl_dataframe.with_columns(
-            (pl.col('time_of_day').dt.hour()).alias('hour'),
-            (pl.col('X').pow(2) + pl.col('Y').pow(2)).sqrt().alias('2d_norm')
+        pl_dataframe = (
+            pl_dataframe.with_columns(
+                (pl.col('time_of_day').dt.hour()).alias('hour'),
+                (pl.col('X').pow(2) + pl.col('Y').pow(2)).sqrt().alias('2d_norm')
+            )
         )
-        self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'].append('2d_norm')
         
         id_df_result = (
             pl_dataframe
