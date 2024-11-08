@@ -70,7 +70,11 @@ class LgbmInit(ModelInit):
         self.initialize_model_utils()
         self.get_model_file_name_dict()
         self.get_col_list()
-        
+    
+    @property
+    def name(self) -> str:
+        return 'lightgbm'
+    
     def get_col_list(self) -> None:
 
         self.useless_col_list: list[str] = (
