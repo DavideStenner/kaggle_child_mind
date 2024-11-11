@@ -36,7 +36,7 @@ if __name__=='__main__':
         )
         trainer.train_explain()
         
-    elif (args.model == 'xgb') | (args.all_model):
+    if (args.model == 'xgb') | (args.all_model):
         from src.model.xgbm.pipeline import XgbPipeline
 
         params_model, experiment_name = import_params(model='xgb')
