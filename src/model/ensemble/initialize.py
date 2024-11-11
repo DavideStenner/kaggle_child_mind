@@ -57,7 +57,7 @@ class EnsembleInit(EnsembleInit):
         self.pipeline_model_list: list[Union[LgbmPipeline, XgbPipeline]] = []
         
     def set_postprocess_utils(self) -> None:
-        total_grid = np.linspace(0, self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']+1, 50)
+        total_grid = np.arange(0, self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']-1, step=0.025)
 
         self.list_treshold_value: list[list[float]] = list(
             combinations(total_grid, 3)
