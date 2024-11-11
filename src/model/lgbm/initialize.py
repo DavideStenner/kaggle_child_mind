@@ -115,7 +115,7 @@ class LgbmInit(ModelInit):
             self.config_dict['COLUMN_INFO']['TARGET'] == 'sii'
             else 80
         )
-        total_grid = np.linspace(0, max_range+1, 50)
+        total_grid = np.linspace(0, max_range-1, 50)
 
         self.list_treshold_value: list[list[float]] = list(
             combinations(total_grid, 3)
