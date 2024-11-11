@@ -63,8 +63,8 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
         total_number_model: int = len(self.pipeline_model_list)
         
         for pipeline_model in self.pipeline_model_list:
-            
-            model_type: str = pipeline_model.load_best_pseudo_result()['best_pseudo_name']
+            best_pseudo_result = pipeline_model.load_best_pseudo_result()
+            model_type: str = best_pseudo_result['best_pseudo_name']
             pipeline_model.model_used = [model_type]
             
             pipeline_model.initialize_model_utils()
@@ -82,7 +82,7 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
             model_dict[pipeline_model.name] = {
                 'model_list': model_list,
                 'best_epoch': best_result['best_epoch'],
-                'best_score': best_result['best_score'],
+                'best_score': best_pseudo_result['best_pseudo_score'],
                 'feature_list': pipeline_model.feature_list,
             }
             self.all_feature_list += pipeline_model.feature_list
