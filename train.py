@@ -52,3 +52,20 @@ if __name__=='__main__':
             evaluate_shap=False,
         )
         trainer.train_explain()
+        
+    if (args.model == 'ctb') | (args.all_model):
+        from src.model.ctb.pipeline import CtbPipeline
+
+        params_model, experiment_name = import_params(model='ctb')
+        pipeline_params = import_json('config/params_pipeline.json')
+        
+        updated_config = config_dict.copy()
+        updated_config.update(pipeline_params)
+
+        trainer = CtbPipeline(
+            experiment_name=experiment_name + "_ctb",
+            params_ctb=params_model,
+            config_dict=updated_config,
+            evaluate_shap=False,
+        )
+        trainer.train_explain()
