@@ -25,6 +25,20 @@ def quadratic_weighted_kappa_tresh(combination: list[float], y_true: np.ndarray,
     
     return cohen_kappa_score(y_true, rounded_prediciton_, weights='quadratic')
 
+class QuadraticKappa():         
+    def is_max_optimal(self):
+        return True
+
+    def evaluate(self, approxes, target, weight):
+        y_true = np.array(target)
+        y_pred = approxes[0].round().astype(int)
+
+        eval_result = quadratic_weighted_kappa(y_true=y_true, y_pred=y_pred)
+        return eval_result, 1
+
+    def get_final_error(self, error, weight):
+        return error
+
 def lgb_quadratic_kappa(y_pred: np.ndarray, data: lgb.Dataset) -> Tuple[str, float, bool]:
     rounded_y_pred = y_pred.round().astype(int)
     y_true = data.get_label()
