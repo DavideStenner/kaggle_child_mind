@@ -10,7 +10,7 @@ from typing import Tuple, Dict
 
 from src.base.model.training import ModelTrain
 from src.model.ctb.initialize import CtbInit
-from src.model.metric.official_metric import lgb_quadratic_kappa
+from src.model.metric.official_metric import QuadraticKappa
 
 class CtbTrainer(ModelTrain, CtbInit):
     def _init_train(self) -> None:
@@ -50,7 +50,6 @@ class CtbTrainer(ModelTrain, CtbInit):
 
     def train_target(self, fold_: int, model_type: str) -> None:
         #classification metric
-        params_lgb = self.params_ctb
         progress = {}
 
         train_matrix, test_matrix = self.get_dataset(fold_=fold_)
@@ -59,12 +58,12 @@ class CtbTrainer(ModelTrain, CtbInit):
         model = cb.CatBoostRegressor(
             **self.params_ctb,
             allow_writing_files=False, use_best_model=False,
-            # eval_metric=CTBGiniStability(test_data=test_metric_df, train_data=train_metric_df),
+            eval_metric=QuadraticKappa()
         )
         model.fit(
             train_matrix, 
             eval_set=test_matrix, 
-            metric_period=100,
+            metric_period=50
         )
 
         setattr(
@@ -82,7 +81,7 @@ class CtbTrainer(ModelTrain, CtbInit):
                 getattr(
                     self, f"progress_{model_type}_list"
                 ) +
-                [progress]
+                [model.get_evals_result()]
             )
         )
 
@@ -118,11 +117,30 @@ class CtbTrainer(ModelTrain, CtbInit):
     def get_dataset(self, fold_: int) -> Tuple[cb.Pool]:
         fold_data = self.access_fold(fold_=fold_)
                     
-        train_filtered = fold_data.filter(
-            (pl.col('current_fold') == 't')
+        train_filtered = (
+            fold_data
+            .filter(
+                (pl.col('current_fold') == 't')
+            )
+            .with_columns(
+                [
+                    pl.col(col).cast(pl.Utf8).fill_null('none')
+                    for col in self.categorical_col_list
+                ]
+            )
         )
-        test_filtered = fold_data.filter(
-            (pl.col('current_fold') == 'v')
+            
+        test_filtered = (
+            fold_data
+            .filter(
+                (pl.col('current_fold') == 'v')
+            )
+            .with_columns(
+                [
+                    pl.col(col).cast(pl.Utf8).fill_null('none')
+                    for col in self.categorical_col_list
+                ]
+            )
         )
         
         if not self.config_dict['ONLINE']:
@@ -133,15 +151,15 @@ class CtbTrainer(ModelTrain, CtbInit):
                     test_filtered.select(self.id_row).unique().collect().to_series().to_list()
                 )
             ) == 0
-                        
+        
         train_matrix = cb.Pool(
-            data=train_filtered.select(self.feature_list).collect().to_pandas().to_numpy(self.feature_precision),
-            label=train_filtered.select(self.target_col).collect().to_pandas().to_numpy(self.target_precision),
+            data=train_filtered.select(self.feature_list).collect().to_pandas(),
+            label=train_filtered.select(self.target_col).collect().to_pandas(),
             feature_names=self.feature_list, cat_features=self.categorical_col_list
         )
         test_matrix = cb.Pool(
-            data=test_filtered.select(self.feature_list).collect().to_pandas().to_numpy(self.feature_precision),
-            label=test_filtered.select(self.target_col).collect().to_pandas().to_numpy(self.target_precision),
+            data=test_filtered.select(self.feature_list).collect().to_pandas(),
+            label=test_filtered.select(self.target_col).collect().to_pandas(),
             feature_names=self.feature_list, cat_features=self.categorical_col_list
         )
         return train_matrix, test_matrix
