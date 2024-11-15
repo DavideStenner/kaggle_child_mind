@@ -50,8 +50,6 @@ class CtbTrainer(ModelTrain, CtbInit):
 
     def train_target(self, fold_: int, model_type: str) -> None:
         #classification metric
-        progress = {}
-
         train_matrix, test_matrix = self.get_dataset(fold_=fold_)
 
         self.training_logger.info(f'Start {model_type} training')
@@ -95,19 +93,21 @@ class CtbTrainer(ModelTrain, CtbInit):
             pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
             pl.Float32, pl.Float64, 
         ]
+        STRING_POLARS_DTYPES: list[pl.DataType] = [pl.Utf8]
 
         data = self.access_fold(fold_=0)
         feature_dataset = data.select(self.feature_list).clone()
         
+        #catboost use string for categorical....
         original_columns = feature_dataset.collect_schema().names()
-        only_numerical = feature_dataset.select(pl.all()).select(pl.col(NUMERIC_POLARS_DTYPES)).collect_schema().names()
+        accepted_dtypes_col = feature_dataset.select(pl.all()).select(pl.col(NUMERIC_POLARS_DTYPES+STRING_POLARS_DTYPES)).collect_schema().names()
         
         #no timestamp or string
-        assert set(original_columns) == set(only_numerical)
+        assert set(original_columns) == set(accepted_dtypes_col)
         
         sum_infinite_value: int = (
             feature_dataset
-            .select(pl.all().is_infinite().sum())
+            .select(pl.exclude(pl.Utf8).is_infinite().sum())
             .select(pl.sum_horizontal(pl.all()).alias('any_infinite'))
             .collect()
             .item()
@@ -214,16 +214,32 @@ class CtbTrainer(ModelTrain, CtbInit):
         model_list = self.load_pickle_model_list(model_type=model_type)
         assert best_result_
         
-        null_data = pl.read_parquet(
-            os.path.join(
-                self.original_path_gold,
-                f'data_null.parquet'
+        null_data = (
+            pl.read_parquet(
+                os.path.join(
+                    self.original_path_gold,
+                    f'data_null.parquet'
+                )
+            )
+            .with_columns(
+                [
+                    pl.col(col).cast(pl.Utf8).fill_null('none')
+                    for col in self.categorical_col_list
+                ]
             )
         )
-        test_data = pl.read_parquet(
-            os.path.join(
-                self.original_path_gold,
-                f'test_data.parquet'
+        test_data = (
+            pl.read_parquet(
+                os.path.join(
+                    self.original_path_gold,
+                    f'test_data.parquet'
+                )
+            )
+            .with_columns(
+                [
+                    pl.col(col).cast(pl.Utf8).fill_null('none')
+                    for col in self.categorical_col_list
+                ]
             )
         )
         base_data_casted = (
@@ -234,6 +250,12 @@ class CtbTrainer(ModelTrain, CtbInit):
                 )
             )
             .with_columns(pl.col(self.target_col).cast(pl.Float64))
+            .with_columns(
+                [
+                    pl.col(col).cast(pl.Utf8).fill_null('none')
+                    for col in self.categorical_col_list
+                ]
+            )
         )
         list_pseudo_null_dataset: list[pl.DataFrame] = []
         
@@ -272,11 +294,8 @@ class CtbTrainer(ModelTrain, CtbInit):
             pseudo_test = test_data.to_pandas().copy(deep=True)
             
             oof_prediction: np.ndarray = model_list[fold_].predict(
-                 (
-                    pseudo_null[self.feature_list]
-                    .to_numpy(self.feature_precision)
-                ),
-                num_iteration=best_result_['best_epoch']
+                data=pseudo_null[self.feature_list],
+                ntree_end=best_result_['best_epoch']
             )
             pseudo_null[self.target_col] = oof_prediction
             pseudo_null['fold_info'] = pseudo_train_current_fold
@@ -287,11 +306,8 @@ class CtbTrainer(ModelTrain, CtbInit):
 
             if self.config_dict['ONLINE']:
                 oof_prediction_test: np.ndarray = model_list[fold_].predict(
-                    (
-                        pseudo_test[self.feature_list]
-                        .to_numpy(self.feature_precision)
-                    ),
-                    num_iteration=best_result_['best_epoch']
+                    data=pseudo_test[self.feature_list],
+                    ntree_end=best_result_['best_epoch']
                 )
                 pseudo_test[self.target_col] = oof_prediction_test
                 pseudo_test['fold_info'] = pseudo_train_current_fold
