@@ -332,12 +332,13 @@ class CtbExplainer(CtbInit):
                     ), type='ShapValues'
                 )[:, :-1]
                 
-                data_list.append(test_feature.to_numpy())
+                data_list.append(test_feature)
                 shap_list.append(shap_values)
                 shap_insight[f'imp_shap_fold_{fold_}'] = np.abs(shap_values).mean(axis=0)
             
-            shap_values = np.concatenate(shap_list, axis=0)
-            data_values = np.concatenate(data_list, axis=0)
+            shap_values: np.ndarray = np.concatenate(shap_list, axis=0)
+            data_values: pd.DataFrame = pd.concat(data_list, axis=0)
+            
             shap_insight[f'mean_imp_shap'] = shap_insight[
                 [f'imp_shap_fold_{fold_}' for fold_ in range(self.n_fold)]
             ].mean(axis=1)
@@ -373,36 +374,32 @@ class CtbExplainer(CtbInit):
             )
             plt.close(fig)
 
-            # #begin for data with time series
-            # idx_row_with_time_series: np.ndarray = (
-            #     np.logical_not(
-            #         np.isnan(
-            #             data_values[
-            #                 :,
-            #                 ['time_series_' == col[:12] for col in self.feature_list]
-            #             ]
-            #         )
-            #     ).sum(axis=1)>0
-            # )
+            #begin for data with time series
+            idx_row_with_time_series: np.ndarray = (
+                data_values.loc[
+                    :,
+                    ['time_series_' == col[:12] for col in self.feature_list]
+                ].notna().sum(axis=1)>0
+            )
 
-            # if any(idx_row_with_time_series):
-            #     #shap
-            #     fig = plt.figure()
-            #     shap.summary_plot(
-            #         shap_values[idx_row_with_time_series, :], data_values[idx_row_with_time_series, :],
-            #         [
-            #             col[:30] for col in self.feature_list
-            #         ],
-            #         show=False, 
-            #         max_display=30
-            #     )
-            #     plt.savefig(
-            #         os.path.join(
-            #             self.experiment_path_dict['insight'].format(model_type=model_type),
-            #             f'shap_insight_ts.png'
-            #         )
-            #     )
-            #     plt.close(fig)
+            if any(idx_row_with_time_series):
+                #shap
+                fig = plt.figure()
+                shap.summary_plot(
+                    shap_values[idx_row_with_time_series, :], data_values.loc[idx_row_with_time_series, :],
+                    [
+                        col[:30] for col in self.feature_list
+                    ],
+                    show=False, 
+                    max_display=30
+                )
+                plt.savefig(
+                    os.path.join(
+                        self.experiment_path_dict['insight'].format(model_type=model_type),
+                        f'shap_insight_ts.png'
+                    )
+                )
+                plt.close(fig)
             
         np.seterr(invalid='warn')
 
