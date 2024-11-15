@@ -4,7 +4,7 @@ PKG_NAME: str = "src"
 VERSION: str = "0.1.0"
 AUTHOR: str = "Davide Stenner"
 DESCRIPTION: str = "https://www.kaggle.com/competitions/child-mind-institute-problematic-internet-use"
-PYTHON_VERSION: str = "3.12.4"
+PYTHON_VERSION: str = "3.12.0"
 
 def _read_install_requires():
     with open('requirements.txt') as file:
