@@ -47,7 +47,7 @@ class XgbPipeline(ModelPipeline, XgbTrainer, XgbExplainer, XgbInference):
         for _ in range(self.config_dict['n_pseudo']):
             model_type = self.begin_pseudo_label(model_type=model_type)
             self.create_experiment_structure()
-            self.run_train()
+            self.train()
             self.explain_model()
 
             pseudo_experiment_name_list.append(model_type)
