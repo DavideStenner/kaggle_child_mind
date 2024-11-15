@@ -73,8 +73,8 @@ class CtbPipeline(ModelPipeline, CtbTrainer, CtbExplainer, CtbInference):
     def train_explain(self) -> None:
         self.create_experiment_structure()
         self.initialize_logger()
-        # self.run_train()
-        # self.explain_model()
+        self.run_train()
+        self.explain_model()
         
         if 'n_pseudo' in self.config_dict.keys():
             if self.config_dict['n_pseudo'] > 0:
