@@ -30,7 +30,8 @@ class QuadraticKappa():
         return True
 
     def evaluate(self, approxes, target, weight):
-        y_true = np.array(target)
+        #it run metric also on test for detector. needed to round for pseudo-labeling
+        y_true = np.array(target).round().astype(int)
         y_pred = approxes[0].round().astype(int)
 
         eval_result = quadratic_weighted_kappa(y_true=y_true, y_pred=y_pred)
