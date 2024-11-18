@@ -85,7 +85,7 @@
             "BIA-BIA_Activity_Level_num", "BIA-BIA_Frame_num", "PreInt_EduHx-computerinternet_hoursday"
         ],
         "TIME_SERIES_FEATURES": [
-            "X", "Y", "Z", "enmo",
+            "enmo",
             "anglez",
             "light", "battery_voltage"
         ]
