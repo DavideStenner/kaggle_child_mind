@@ -40,9 +40,6 @@ class PreprocessImport(BaseImport, PreprocessInit):
                     )
                 )
                 #near the test
-                .filter(
-                    (pl.col('relative_date_PCIAT').abs()<=30)
-                )
                 .with_columns(
                     [
                         pl.col('time_of_day').cast(pl.Time),
