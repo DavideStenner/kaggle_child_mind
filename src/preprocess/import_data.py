@@ -27,7 +27,7 @@ class PreprocessImport(BaseImport, PreprocessInit):
         )
         
         list_time_series: list[str] = os.listdir(folder_to_time_series)
-        self.time_series_list: list[pl.DataFrame] = []
+        self.time_series_list: list[pl.LazyFrame] = []
         
         for time_series_id_folder in list_time_series:
             id_name: str = time_series_id_folder.split("=")[-1]
