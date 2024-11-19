@@ -39,7 +39,23 @@ class XgbInference(ModelPredict, XgbInit):
                 prediction_ = np.add(prediction_, prediction_model)
             
         return prediction_
+
+    def round_predict(self, prediction_: np.ndarray, best_combination: list[float]) -> np.ndarray:
+        rounded_prediciton_ = (
+            np.where(
+                prediction_ < best_combination[0], 0,
+                np.where(
+                    prediction_ < best_combination[1], 1,
+                        np.where(
+                            prediction_ < best_combination[2], 2, 
+                            3
+                        )
+                    )
+            )
+        )
+        return rounded_prediciton_
     
+
     def predict(self, model_type: str, test_data: pl.DataFrame) -> np.ndarray:
         assert self.inference
 
@@ -56,21 +72,11 @@ class XgbInference(ModelPredict, XgbInit):
             model_type=model_type, 
         )
 
-        prediction_ = self.blend_model_predict(
-            test_data=test_data, model_list=model_list, epoch=best_epoch
-        )
-        
-        rounded_prediciton_ = (
-            np.where(
-                prediction_ < best_combination[0], 0,
-                np.where(
-                    prediction_ < best_combination[1], 1,
-                        np.where(
-                            prediction_ < best_combination[2], 2, 
-                            3
-                        )
-                    )
-            )
+        rounded_prediciton_ = self.round_predict(
+            prediction_= self.blend_model_predict(
+                test_data=test_data, model_list=model_list, epoch=best_epoch
+            ),
+            best_combination=best_combination
         )
             
         return rounded_prediciton_
