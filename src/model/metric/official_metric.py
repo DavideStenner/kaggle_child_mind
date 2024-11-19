@@ -23,7 +23,7 @@ def quadratic_weighted_kappa_tresh(combination: list[float], y_true: np.ndarray,
         )
     )
     
-    return cohen_kappa_score(y_true, rounded_prediciton_, weights='quadratic')
+    return quadratic_weighted_kappa(y_true, rounded_prediciton_)
 
 class QuadraticKappa():         
     def is_max_optimal(self):
