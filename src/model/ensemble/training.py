@@ -6,6 +6,7 @@ import pandas as pd
 import polars as pl
 import xgboost as xgb
 import lightgbm as lgb
+import catboost as cb
 
 from tqdm import tqdm
 from functools import partial
@@ -74,7 +75,7 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
             pipeline_model.load_used_feature(model_type=model_type)
             pipeline_model.load_used_categorical_feature(model_type=model_type)
 
-            model_list: list[Union[lgb.Booster, xgb.Booster]] = pipeline_model.load_pickle_model_list(
+            model_list: list[Union[lgb.Booster, xgb.Booster, cb.CatBoost]] = pipeline_model.load_pickle_model_list(
                 model_type=model_type, 
             )
             best_result: dict[str, any] = pipeline_model.load_best_result(model_type=model_type)
@@ -110,7 +111,7 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
         for fold_, (test_feature, test_target) in enumerate(dataset_list):            
             for n_model, (name_model, model_info) in enumerate(model_dict.items()):
                 
-                selected_model_list: list[Union[xgb.Booster, lgb.Booster]] = model_info['model_list']
+                selected_model_list: list[Union[xgb.Booster, lgb.Booster, cb.CatBoost]] = model_info['model_list']
                 best_epoch: int = model_info['best_epoch']
                 feature_list: list[str] = model_info['feature_list']
 
@@ -138,7 +139,12 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
                         ),
                         num_iteration = best_epoch
                     )
-                
+                    
+                if name_model == 'catboost':
+                    pred_target = selected_model_list[fold_].predict(
+                        test_feature[feature_list],
+                        ntree_end = best_epoch
+                    )
                 if n_model == 0:
                     pred_target_ensemble = pred_target/total_number_model
                 else:

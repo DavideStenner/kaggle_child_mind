@@ -14,6 +14,7 @@ from src.utils.logging_utils import get_logger
 
 from src.model.lgbm.pipeline import LgbmPipeline
 from src.model.xgbm.pipeline import XgbPipeline
+from src.model.ctb.pipeline import CtbPipeline
 
 class EnsembleInit(EnsembleInit):
     def __init__(self, 
@@ -54,7 +55,7 @@ class EnsembleInit(EnsembleInit):
         self.feature_precision: str = 'float64'
         self.target_precision: str = 'float64'
 
-        self.pipeline_model_list: list[Union[LgbmPipeline, XgbPipeline]] = []
+        self.pipeline_model_list: list[Union[LgbmPipeline, XgbPipeline, CtbPipeline]] = []
         
     def set_postprocess_utils(self) -> None:
         total_grid = np.arange(0, self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE']-1, step=0.025)
@@ -120,3 +121,18 @@ class EnsembleInit(EnsembleInit):
             )
 
             self.pipeline_model_list.append(xgb_model)
+
+        if 'ctb' in self.params_ensemble['model']:
+            from src.utils.import_utils import import_params
+            from src.model.ctb.pipeline import CtbPipeline
+        
+            params_model, experiment_name = import_params(model='ctb')
+        
+            ctb_model: CtbPipeline = CtbPipeline(
+                experiment_name=experiment_name + "_ctb",
+                params_ctb=params_model,
+                config_dict=self.config_dict,
+                evaluate_shap=False,
+            )
+
+            self.pipeline_model_list.append(ctb_model)
