@@ -212,7 +212,10 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
             .clone()
             .select(
                 [
-                    self.config_dict['ID_COL'],                    
+                    self.config_dict['ID_COL'],            
+                    (
+                        pl.col('relative_date_PCIAT').n_unique().alias('time_series_total_day_registered')
+                    ),
                     (
                         pl.col('non-wear_flag')
                         .sum()
