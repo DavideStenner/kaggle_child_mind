@@ -27,13 +27,13 @@ class XgbInference(ModelPredict, XgbInit):
         prediction_ = np.zeros((test_data.shape[0]), dtype=self.target_precision)
         test_data = self.load_feature_data(test_data)
         
-        for iter, model in enumerate(model_list):
+        for iter_, model in enumerate(model_list):
             prediction_model = model.predict(
                 test_data,
                 iteration_range = (0, epoch)
             )/self.n_fold
 
-            if iter==0:
+            if iter_==0:
                 prediction_ = prediction_model
             else:
                 prediction_ = np.add(prediction_, prediction_model)

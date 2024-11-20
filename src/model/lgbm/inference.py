@@ -15,12 +15,12 @@ class LgbmInference(ModelPredict, LgbmInit):
     def blend_model_predict(self, test_data: pl.DataFrame, model_list: list[lgb.Booster], epoch: int) -> np.ndarray:        
         test_data = self.load_feature_data(test_data)
                 
-        for iter, model in enumerate(model_list):
+        for iter_, model in enumerate(model_list):
             prediction_model = model.predict(
                 test_data, num_iteration = epoch
             )/self.n_fold
             
-            if iter==0:
+            if iter_==0:
                 prediction_ = prediction_model
             else:
                 prediction_ = np.add(prediction_, prediction_model)
