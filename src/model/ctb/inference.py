@@ -50,6 +50,21 @@ class CtbInference(ModelPredict, CtbInit):
             )
         )
         return rounded_prediciton_
+
+    def treshold_predict(self, model_type: str, test_data: pl.DataFrame) -> np.ndarray:
+        prediction_ = self.predict(model_type=model_type, test_data=test_data)
+        best_result = self.load_best_result(
+            model_type=model_type
+        )
+        
+        best_combination = best_result['treshold_optim']['best_combination']
+        rounded_prediciton_ = self.round_predict(
+            prediction_= prediction_,
+            best_combination=best_combination
+        )
+            
+        return rounded_prediciton_
+    
     
     def predict(self, model_type: str, test_data: pl.DataFrame) -> np.ndarray:
         assert self.inference
@@ -62,17 +77,12 @@ class CtbInference(ModelPredict, CtbInit):
         )
         
         best_epoch = best_result['best_epoch']
-        best_combination = best_result['treshold_optim']['best_combination']
         model_list: list[cb.CatBoost] = self.load_pickle_model_list(
             model_type=model_type, 
         )
 
-        rounded_prediciton_ = self.round_predict(
-            prediction_= self.blend_model_predict(
-                test_data=test_data, model_list=model_list, epoch=best_epoch
-            ),
-            best_combination=best_combination
+        prediction_= self.blend_model_predict(
+            test_data=test_data, model_list=model_list, epoch=best_epoch
         )
-        
             
-        return rounded_prediciton_
+        return prediction_
