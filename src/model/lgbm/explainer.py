@@ -280,7 +280,7 @@ class LgbmExplainer(LgbmInit):
             best_score = result_by_combination[idx_best_combination]
             best_combination = self.list_treshold_value[idx_best_combination]
             
-            base_cv_score = best_result['best_score']
+            base_cv_score = best_result['all_best_score']['q_kappa']
             increment_score = best_score - base_cv_score
             
             self.training_logger.info(
