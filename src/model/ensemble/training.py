@@ -145,7 +145,13 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
                     catboost_test_feature = test_feature.copy()[feature_list]
                     catboost_test_feature[model_info['categorical_col_list']] = (
                         catboost_test_feature[model_info['categorical_col_list']]
-                        .fillna('none')
+                        .fillna(-1)
+                        .astype(int)
+                        .astype(str)
+                    )
+                    catboost_test_feature[model_info['categorical_col_list']] = (
+                        catboost_test_feature[model_info['categorical_col_list']]
+                        .replace('-1', 'none')
                     )
 
                     pred_target = selected_model_list[fold_].predict(
