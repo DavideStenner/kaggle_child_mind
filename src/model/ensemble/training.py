@@ -85,6 +85,7 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
                 'best_epoch': best_result['best_epoch'],
                 'best_score': best_pseudo_result['best_pseudo_score'],
                 'feature_list': pipeline_model.feature_list,
+                'categorical_col_list': pipeline_model.categorical_col_list
             }
             self.all_feature_list += pipeline_model.feature_list
             
@@ -141,8 +142,14 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
                     )
                     
                 if name_model == 'catboost':
+                    catboost_test_feature = test_feature.copy()[feature_list]
+                    catboost_test_feature[model_info['categorical_col_list']] = (
+                        catboost_test_feature[model_info['categorical_col_list']]
+                        .fillna('none')
+                    )
+
                     pred_target = selected_model_list[fold_].predict(
-                        test_feature[feature_list],
+                        catboost_test_feature[feature_list],
                         ntree_end = best_epoch
                     )
                 if n_model == 0:
