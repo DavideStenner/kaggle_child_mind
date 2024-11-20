@@ -3,8 +3,9 @@ from typing import Any, Tuple
 from src.model.ensemble.initialize import EnsembleInit
 from src.base.ensemble.ensemble import EnsemblePipeline
 from src.model.ensemble.training import EnsembleTrainer
+from src.model.ensemble.inference import EnsembleInference
 
-class EnsemblePipeline(EnsemblePipeline, EnsembleTrainer):
+class EnsemblePipeline(EnsemblePipeline, EnsembleTrainer, EnsembleInference):
     def __init__(self, 
             experiment_name:str, 
             params_ensemble: dict[str, Any],
@@ -23,6 +24,3 @@ class EnsemblePipeline(EnsemblePipeline, EnsembleTrainer):
         self.initialize_logger()
         self.ensemble_logger.info('Starting preprocessing ensemble')
         self.train()
-    
-    def predict(self) -> None: 
-        pass
