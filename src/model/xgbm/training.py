@@ -283,11 +283,12 @@ class XgbTrainer(ModelTrain, XgbInit):
 
             if self.config_dict['ONLINE']:
                 oof_prediction_test: np.ndarray = model_list[fold_].predict(
-                    (
+                    xgb.DMatrix(
                         pseudo_test[self.feature_list]
-                        .to_numpy(self.feature_precision)
+                        .to_numpy(self.feature_precision),
+                        feature_names=self.feature_list
                     ),
-                    num_iteration=best_result_['best_epoch']
+                    iteration_range=(0, best_result_['best_epoch'])
                 )
                 pseudo_test[self.target_col] = oof_prediction_test
                 pseudo_test['fold_info'] = pseudo_train_current_fold
