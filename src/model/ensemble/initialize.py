@@ -91,6 +91,17 @@ class EnsembleInit(EnsembleInit):
         ) as file:
             json.dump(best_result, file)
     
+    def load_best_result(self) -> dict[str, Union[int, float]]:
+        with open(
+            os.path.join(
+                self.experiment_path,
+                'best_result.json'
+            ), 'r'
+        ) as file:
+            best_result = json.load(file)
+        
+        return best_result
+    
     def load_model(self) -> None:
         if 'lgb' in self.params_ensemble['model']:
             from src.utils.import_utils import import_params
