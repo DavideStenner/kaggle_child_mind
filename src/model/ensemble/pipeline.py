@@ -19,6 +19,8 @@ class EnsemblePipeline(EnsemblePipeline, EnsembleTrainer, EnsembleInference):
 
     def activate_inference(self) -> None:
         self.inference = True
+        for pipeline_model in self.pipeline_model_list:
+            pipeline_model.activate_inference()
         
     def ensemble_preprocess(self) -> None:
         self.initialize_logger()
