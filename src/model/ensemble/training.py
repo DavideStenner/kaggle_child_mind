@@ -189,13 +189,13 @@ class EnsembleTrainer(EnsembleTraining, EnsembleInit):
         self.ensemble_logger.info(
             f'T1: {best_combination[0]}\nT2: {best_combination[1]}\nT3: {best_combination[2]}'
         )
-        best_result['treshold_optim'] = {
+        ensemble_best_result: dict[str, any] = {
             'best_score': best_score,
             'best_combination': best_combination
         }
         
         self.save_best_result(
-            best_result=best_result 
+            best_result=ensemble_best_result 
         )
 
     def train(self) -> None:
