@@ -32,7 +32,7 @@ if __name__=='__main__':
             experiment_name=experiment_name + "_lgb",
             params_lgb=params_model,
             config_dict=updated_config,
-            evaluate_shap=False
+            evaluate_shap=True
         )
         trainer.train_explain()
         
@@ -49,7 +49,7 @@ if __name__=='__main__':
             experiment_name=experiment_name + "_xgb",
             params_xgb=params_model,
             config_dict=updated_config,
-            evaluate_shap=False,
+            evaluate_shap=True,
         )
         trainer.train_explain()
         
@@ -66,6 +66,6 @@ if __name__=='__main__':
             experiment_name=experiment_name + "_ctb",
             params_ctb=params_model,
             config_dict=updated_config,
-            evaluate_shap=False,
+            evaluate_shap=True,
         )
         trainer.train_explain()

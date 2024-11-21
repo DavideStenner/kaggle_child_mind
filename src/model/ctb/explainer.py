@@ -315,7 +315,6 @@ class CtbExplainer(CtbInit):
                 model_type=model_type, 
             )
             best_result: dict[str, any] = self.load_best_result(model_type=model_type)
-            best_epoch: int = best_result['best_epoch']
             
             shap_list: list[np.ndarray] = []
             data_list: list[np.ndarray] = []
@@ -407,4 +406,5 @@ class CtbExplainer(CtbInit):
         self.oof_get_best_treshold()
         
     def get_oof_prediction(self) -> None:
-        self.oof_get_shap_contribution()
+        if self.evaluate_shap:
+            self.oof_get_shap_contribution()

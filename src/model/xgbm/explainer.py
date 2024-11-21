@@ -569,4 +569,5 @@ class XgbExplainer(XgbInit):
         self.oof_get_best_treshold()
         
     def get_oof_prediction(self) -> None:
-        self.oof_get_shap_contribution()
+        if self.evaluate_shap:
+            self.oof_get_shap_contribution()
