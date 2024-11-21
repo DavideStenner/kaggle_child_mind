@@ -25,7 +25,7 @@ class CtbInit(ModelInit):
         self.model_used: list[str] = ['main']
         
         self.model_metric_used: list[str] = {
-            target_: {'label': 'QuadraticKappa', 'maximize': True}
+            target_: {'label': 'RMSE', 'maximize': False}
             for target_ in self.model_used
         }
         self.experiment_path: str = os.path.join(
