@@ -61,7 +61,7 @@ class CtbTrainer(ModelTrain, CtbInit):
         model.fit(
             train_matrix, 
             eval_set=test_matrix, 
-            metric_period=50
+            verbose=100
         )
 
         setattr(
