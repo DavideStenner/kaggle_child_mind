@@ -69,3 +69,19 @@ if __name__=='__main__':
             evaluate_shap=True,
         )
         trainer.train_explain()
+    
+    # if (args.model == 'nn') | (args.all_model):
+    #     from src.model.nn.pipeline import MLPPipeline
+
+    #     params_model, experiment_name = import_params(model='nn')
+    #     pipeline_params = import_json('config/params_pipeline.json')
+        
+    #     updated_config = config_dict.copy()
+    #     updated_config.update(pipeline_params)
+
+    #     trainer = MLPPipeline(
+    #         experiment_name=experiment_name + "_nn",
+    #         params_nn=params_model,
+    #         config_dict=updated_config,
+    #     )
+    #     trainer.train_explain()
