@@ -26,7 +26,7 @@ class XgbInit(ModelInit):
         
         self.model_used: list[str] = ['main']
         self.model_metric_used: list[str] = {
-            target_: {'label': 'rmse', 'maximize': False}
+            target_: {'label': 'q_kappa', 'maximize': True}
             for target_ in self.model_used
         }
         self.experiment_path: str = os.path.join(
