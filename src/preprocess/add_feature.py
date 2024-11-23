@@ -206,7 +206,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                         .alias('time_series_non-wear_flag_mean')
                     ),
                     (
-                        (pl.col('non-wear_flag').count()/(self.total_5s_time_over_day * pl.col('relative_date_PCIAT')))
+                        (pl.col('non-wear_flag').count()/(self.total_5s_time_over_day * pl.col('relative_date_PCIAT').n_unique()))
                         .alias('time_series_missing_data_mean')
                     ),
                     pl.col('weekday').mean().alias('time_series_weekday_mean'), 
