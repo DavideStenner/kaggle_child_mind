@@ -139,176 +139,83 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                 ]
             )
         )
-    def __get_single_time_series_df(self, pl_dataframe: pl.LazyFrame) -> pl.DataFrame:
-        def get_list_operation(name_suffix: str) -> list[pl.Expr]:
-            return (
-                [self.config_dict['ID_COL']] +
-                [
-                    (
-                        pl.col(col)
-                        .min()
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias(f'time_series_{col}_min_{name_suffix}')
-                    )
-                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                ] +
-                [
-                    (
-                        pl.col(col)
-                        .max()
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias(f'time_series_{col}_max_{name_suffix}')
-                    )
-                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                ] +
-                [
-                    (
-                        pl.col(col)
-                        .mean()
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias(f'time_series_{col}_mean_{name_suffix}')
-                    )
-                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                ] +
-                [
-                    (
-                        pl.col(col)
-                        .std()
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias(f'time_series_{col}_std_{name_suffix}')
-                    )
-                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
-                ]
-            )
-        def get_time_mask(time: str) -> pl.Expr:
-            mask_dict = {
-                'morning': (pl.col('hour') >= 6) & (pl.col('hour') < 12),
-                'afternoon': (pl.col('hour') >= 12) & (pl.col('hour') < 18),
-                'evening': (pl.col('hour') >= 18) & (pl.col('hour') < 22),
-                'night': (pl.col('hour') >= 22) | (pl.col('hour') < 6)
-            }
-            return mask_dict[time]
-
-        pl_dataframe = (
-            pl_dataframe.with_columns(
-                (pl.col('time_of_day').dt.hour()).alias('hour'),
-                (pl.col('X').pow(2) + pl.col('Y').pow(2)).sqrt().alias('2d_norm')
-            )
-        )
         
-        id_df_result = (
+    def __get_single_time_series_df(self, pl_dataframe: pl.LazyFrame) -> pl.DataFrame:
+        result_df: pl.DataFrame = (
             pl_dataframe
-            .select(
-                pl.col(self.config_dict['ID_COL']).unique()
-            )
-        )
-        time_mask_list: list[tuple[str, pl.Expr]] = [
-            [filter_, get_time_mask(filter_)]
-            for filter_ in ['morning', 'afternoon', 'evening', 'night']
-        ]
-        result_df_to_join: list[pl.LazyFrame] = []
-        result_df_to_join.append(
-            pl_dataframe
-            .clone()
-            .select(
-                [
-                    self.config_dict['ID_COL'],            
-                    (
-                        pl.col('relative_date_PCIAT').n_unique().alias('time_series_total_day_registered')
-                    ),
-                    (
-                        pl.col('non-wear_flag')
-                        .sum()
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias('time_series_non-wear_flag_mean')
-                    ),
-                    (
-                        (self.total_5s_time_over_day - pl.col('non-wear_flag').count())
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias('time_series_missing_data_mean')
-                    ),
-                    'weekday', 'quarter'
-                ] +
-                [
-                    (
-                        (
-                            self.dict_total_5s_time_slice[filter_name] - 
-                            pl.col('non-wear_flag').filter(pl_filter).count()
-                        )
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias(f'time_series_missing_data_{filter_name}_mean')
-                    )
-                    for filter_name, pl_filter in time_mask_list
-                ] +
-                [
-                    (
-                        pl.col('non-wear_flag')
-                        .filter(pl_filter)
-                        .sum()
-                        .over(self.config_dict['ID_COL'], 'relative_date_PCIAT')
-                        .alias(f'time_series_non-wear_flag_{filter_name}_mean')
-                    )
-                    for filter_name, pl_filter in time_mask_list
-                ] +
-                #other custom
-                [
-                    #light features
-                    (pl.col('light').filter(get_time_mask('morning'))<50).sum().alias('time_series_morning_dark'),
-                    (pl.col('light').filter(get_time_mask('morning'))>100).sum().alias('time_series_morning_light'),
-                    (pl.col('light').filter(get_time_mask('afternoon'))<50).sum().alias('time_series_afternoon_dark'),
-                    (pl.col('light').filter(get_time_mask('afternoon'))>100).sum().alias('time_series_afternoon_light'),
-                    (pl.col('light').filter(get_time_mask('evening'))<50).sum().alias('time_series_evening_dark'),
-                    (pl.col('light').filter(get_time_mask('evening'))>100).sum().alias('time_series_evening_light'),
-                    (pl.col('light').filter(get_time_mask('night'))<50).sum().alias('time_series_night_dark'),
-                    (pl.col('light').filter(get_time_mask('night'))>100).sum().alias('time_series_night_light'),
-                ] +
-                [
-                    pl.col(features_).filter(pl.col('hour')==hour_).mean().alias(f'time_series_{features_}_hour_{hour_}_mean')
-                    for features_, hour_ in product(
-                        self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES'],
-                        range(24)
-                    )
-                ]
+            .with_columns(
+                (pl.col('X').pow(2) + pl.col('Y').pow(2)).sqrt().alias('2d_norm')
             )
             .group_by(self.config_dict['ID_COL'])
             .agg(
-                pl.exclude(['weekday', 'quarter']).mean(),
-                pl.col('weekday').mean().alias('time_series_weekday_mean'),
-                pl.col('quarter').mean().alias('time_series_quarter_mean')
+                [
+                    (
+                        pl.col(col)
+                        .filter(pl.col('non-wear_flag')==0)
+                        .min()
+                        .alias(f'time_series_{col}_min')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .filter(pl.col('non-wear_flag')==0)
+                        .max()
+                        .alias(f'time_series_{col}_max')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .filter(pl.col('non-wear_flag')==0)
+                        .mean()
+                        .alias(f'time_series_{col}_mean')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .filter(pl.col('non-wear_flag')==0)
+                        .std()
+                        .alias(f'time_series_{col}_std')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col(col)
+                        .filter(pl.col('non-wear_flag')==0)
+                        .median()
+                        .alias(f'time_series_{col}_median')
+                    )
+                    for col in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']
+                ] +
+                [
+                    (
+                        pl.col('relative_date_PCIAT')
+                        .filter(pl.col('non-wear_flag')==0)
+                        .n_unique()
+                        .alias('time_series_total_day_registered')
+                    ),
+                    (
+                        pl.col('non-wear_flag')
+                        .mean()
+                        .alias('time_series_non-wear_flag_mean')
+                    ),
+                    (
+                        (pl.col('non-wear_flag').count()/(self.total_5s_time_over_day * pl.col('relative_date_PCIAT')))
+                        .alias('time_series_missing_data_mean')
+                    ),
+                    pl.col('weekday').mean().alias('time_series_weekday_mean'), 
+                    pl.col('quarter').mean().alias('time_series_quarter_mean')
+                ]   
             )
+            .collect()
         )
-        for name_suffix, pl_filter in (
-            [
-                ['all', True],
-                ['weekend', pl.col('weekday')>=6],
-                ['light', pl.col('light')>=100],
-            ] +
-            time_mask_list
-        ):
-            result_df_to_join.append(
-                pl_dataframe
-                .clone()
-                .filter(pl.col('non-wear_flag')==0)
-                .filter(pl_filter)
-                .select(
-                    get_list_operation(name_suffix)
-                )
-                .group_by(self.config_dict['ID_COL'])
-                .agg(
-                    pl.all().mean()
-                )
-            )
-        
-        for df_ in result_df_to_join:
-            id_df_result = id_df_result.join(
-                df_, 
-                on=self.config_dict['ID_COL'], 
-                how='left'
-            )
-            
-        id_df_result = id_df_result.collect()
-        
-        return id_df_result
+        return result_df
     
     def __create_time_series_feature(self) -> None:
         if '2d_norm' not in self.config_dict['COLUMN_INFO']['TIME_SERIES_FEATURES']:
