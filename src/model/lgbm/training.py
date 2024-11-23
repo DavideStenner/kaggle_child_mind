@@ -10,7 +10,7 @@ from typing import Tuple, Dict
 
 from src.base.model.training import ModelTrain
 from src.model.lgbm.initialize import LgbmInit
-from src.model.metric.official_metric import lgb_quadratic_kappa
+from src.model.metric.official_metric import lgb_quadratic_kappa, lgb_quadratic_kappa_tresh
 
 class LgbmTrainer(ModelTrain, LgbmInit):
     def _init_train(self) -> None:
@@ -62,7 +62,8 @@ class LgbmTrainer(ModelTrain, LgbmInit):
         ]
 
         train_matrix, test_matrix = self.get_dataset(fold_=fold_)
-
+        feval_lgb = partial(lgb_quadratic_kappa_tresh, self.config_dict['TRESHOLD'])
+        
         self.training_logger.info(f'Start {model_type} training')
         model = lgb.train(
             params=params_lgb,
@@ -71,7 +72,7 @@ class LgbmTrainer(ModelTrain, LgbmInit):
             valid_sets=[test_matrix],
             valid_names=['valid'],
             callbacks=callbacks_list,
-            feval=lgb_quadratic_kappa
+            feval=feval_lgb
         )
 
         setattr(

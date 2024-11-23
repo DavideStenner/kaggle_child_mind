@@ -9,7 +9,7 @@ from typing import Tuple, Dict
 
 from src.base.model.training import ModelTrain
 from src.model.xgbm.initialize import XgbInit
-from src.model.metric.official_metric import xgb_quadratic_kappa
+from src.model.metric.official_metric import xgb_quadratic_kappa, xgb_quadratic_kappa_tresh
 
 class XgbTrainer(ModelTrain, XgbInit):
     def _init_train(self) -> None:
@@ -56,13 +56,15 @@ class XgbTrainer(ModelTrain, XgbInit):
         train_matrix, test_matrix = self.get_dataset(fold_=fold_)
 
         self.training_logger.info(f'Start {model_type} training')
+        feval_lgb = partial(xgb_quadratic_kappa_tresh, self.config_dict['TRESHOLD'])
+
         model = xgb.train(
             params=params_xgb,
             dtrain=train_matrix, 
             num_boost_round=params_xgb['num_boost_round'],
             evals=[(test_matrix, 'valid')],
             evals_result=progress, verbose_eval=100,
-            custom_metric=xgb_quadratic_kappa
+            custom_metric=feval_lgb
         )
 
         setattr(
