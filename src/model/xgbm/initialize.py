@@ -8,7 +8,7 @@ import polars as pl
 import xgboost as xgb
 
 from typing import Any, Union, Dict, Tuple
-from itertools import combinations
+from itertools import combinations, product
 from src.base.model.initialize import ModelInit
 from src.utils.logging_utils import get_logger
 
@@ -112,17 +112,31 @@ class XgbInit(ModelInit):
             )
 
     def set_postprocess_utils(self) -> None:
-        max_range: int = (
-            self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'] if
-            self.config_dict['COLUMN_INFO']['TARGET'] == 'sii'
-            else 80
-        )
-        total_grid = np.linspace(0, max_range-1, 50)
+        if 'TRESHOLD' in self.config_dict.keys():
+            treshold_base: list[float] = self.config_dict['TRESHOLD']
+            
+            product_list = [
+                np.linspace(treshold_base[0]-0.2, treshold_base[0]+0.2, 25),
+                np.linspace(treshold_base[1]-0.2, treshold_base[1]+0.2, 25),
+                np.linspace(treshold_base[2]-0.2, treshold_base[2]+0.2, 25),
+            ]
+            self.list_treshold_value: list[list[float]] = list(
+                product(
+                    product_list[0], product_list[1], product_list[2]
+                )
+            )
+            self.list_treshold_value.append(treshold_base)
+        else:
+            max_range: int = (
+                self.config_dict['COLUMN_INFO']['TARGET_N_UNIQUE'] if
+                self.config_dict['COLUMN_INFO']['TARGET'] == 'sii'
+                else 80
+            )
+            total_grid = np.linspace(0, max_range-1, 50)
 
-        self.list_treshold_value: list[list[float]] = list(
-            combinations(total_grid, 3)
-        )
-                                
+            self.list_treshold_value: list[list[float]] = list(
+                combinations(total_grid, 3)
+            )
 
                     
     def get_categorical_columns(self) -> None:
