@@ -47,7 +47,7 @@ class PreprocessAddFeature(BaseFeature, PreprocessInit):
                     (pl.col('Physical-Systolic_BP')-pl.col('Physical-Diastolic_BP')).alias('phisical_Pulse_Pressure'),
                     (
                         pl.when(
-                            pl.col('Physical-Systolic_BP') != pl.col('Physical-Systolic_BP')
+                            pl.col('Physical-Systolic_BP') != pl.col('Physical-Diastolic_BP')
                         )
                         .then(
                             (pl.col('Physical-Diastolic_BP'))/
