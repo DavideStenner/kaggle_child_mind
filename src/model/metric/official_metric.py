@@ -5,6 +5,9 @@ import xgboost as xgb
 from typing import Tuple
 from sklearn.metrics import cohen_kappa_score
 
+from src.utils.import_utils import import_config
+
+CONFIG: dict[str, any] = import_config()
 
 def quadratic_weighted_kappa(y_true, y_pred):
     return cohen_kappa_score(y_true, y_pred, weights='quadratic')
@@ -29,14 +32,26 @@ class QuadraticKappa():
     def is_max_optimal(self):
         return True
 
-    def evaluate(self, approxes, target, weight):
+    def evaluate_round(self, approxes, target, weight):
         #it run metric also on test for detector. needed to round for pseudo-labeling
         y_true = np.array(target).round().astype(int)
         y_pred = approxes[0].round().astype(int)
 
         eval_result = quadratic_weighted_kappa(y_true=y_true, y_pred=y_pred)
-        return eval_result, 1
+        return eval_result
+    
+    def evaluate_tresh(self, approxes, target, weight):
+        #it run metric also on test for detector. needed to round for pseudo-labeling
+        y_true = np.array(target).round().astype(int)
+        y_pred = approxes[0]
 
+        eval_result = quadratic_weighted_kappa_tresh(combination=CONFIG['TRESHOLD'], y_true=y_true, y_pred=y_pred)
+        return eval_result
+
+    def evaluate(self, approxes, target, weight):
+        eval_result = self.evaluate_tresh(approxes, target, weight)
+        return eval_result, 1
+    
     def get_final_error(self, error, weight):
         return error
 
