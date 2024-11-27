@@ -148,53 +148,53 @@ class TabnetExplainer(TabnetInit):
         #     self.load_used_feature(model_type=model_type)
         #     self.__get_single_feature_importance(model_type=model_type)
     
-    def __get_single_feature_importance(self, model_type: str) -> None:
-        best_result = self.load_best_result(
-            model_type=model_type
-        )
-        model_list: list[Standalone_RealMLP_TD_S_Regressor] = self.load_pickle_model_list(
-            model_type=model_type, 
-        )
+    # def __get_single_feature_importance(self, model_type: str) -> None:
+    #     best_result = self.load_best_result(
+    #         model_type=model_type
+    #     )
+    #     model_list: list[Standalone_RealMLP_TD_S_Regressor] = self.load_pickle_model_list(
+    #         model_type=model_type, 
+    #     )
 
-        feature_importances = pd.DataFrame()
-        feature_importances['feature'] = self.feature_list
+    #     feature_importances = pd.DataFrame()
+    #     feature_importances['feature'] = self.feature_list
 
-        for fold_, model in enumerate(model_list):
-            feature_importances[f'fold_{fold_}'] = model.feature_importances_
+    #     for fold_, model in enumerate(model_list):
+    #         feature_importances[f'fold_{fold_}'] = model.feature_importances_
 
 
-        feature_importances['average'] = feature_importances[
-            [f'fold_{fold_}' for fold_ in range(self.n_fold)]
-        ].mean(axis=1)
+    #     feature_importances['average'] = feature_importances[
+    #         [f'fold_{fold_}' for fold_ in range(self.n_fold)]
+    #     ].mean(axis=1)
         
-        feature_importances = (
-            feature_importances[['feature', 'average']]
-            .sort_values(by='average', ascending=False)
-        )
-        self.training_logger.info(
-            f"Model {model_type} top 5 features are {', '.join(feature_importances['feature'].iloc[:5])}"
-        )
-        #plain feature
-        fig = plt.figure(figsize=(18,8))
-        sns.barplot(data=feature_importances.head(50), x='average', y='feature')
-        plt.title(f"{model_type} 50 TOP feature importance over {self.n_fold} average")
+    #     feature_importances = (
+    #         feature_importances[['feature', 'average']]
+    #         .sort_values(by='average', ascending=False)
+    #     )
+    #     self.training_logger.info(
+    #         f"Model {model_type} top 5 features are {', '.join(feature_importances['feature'].iloc[:5])}"
+    #     )
+    #     #plain feature
+    #     fig = plt.figure(figsize=(18,8))
+    #     sns.barplot(data=feature_importances.head(50), x='average', y='feature')
+    #     plt.title(f"{model_type} 50 TOP feature importance over {self.n_fold} average")
 
-        fig.savefig(
-            os.path.join(
-                self.experiment_path_dict['feature_importance'].format(model_type=model_type), 
-                'importance_plot.png'
-            )
-        )
-        plt.close(fig)
+    #     fig.savefig(
+    #         os.path.join(
+    #             self.experiment_path_dict['feature_importance'].format(model_type=model_type), 
+    #             'importance_plot.png'
+    #         )
+    #     )
+    #     plt.close(fig)
         
-        #feature importance excel
-        feature_importances.to_excel(
-            os.path.join(
-                self.experiment_path_dict['feature_importance'].format(model_type=model_type), 
-                'feature_importances.xlsx'
-            ),
-            index=False
-        )
+    #     #feature importance excel
+    #     feature_importances.to_excel(
+    #         os.path.join(
+    #             self.experiment_path_dict['feature_importance'].format(model_type=model_type), 
+    #             'feature_importances.xlsx'
+    #         ),
+    #         index=False
+    #     )
 
     def __get_list_of_oof_dataset(self) -> list[Tuple[pd.DataFrame, pd.DataFrame]]:
         list_dataset: list[Tuple[pd.DataFrame, pd.DataFrame]] = []
