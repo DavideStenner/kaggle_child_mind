@@ -15,6 +15,7 @@ from src.utils.logging_utils import get_logger
 from src.model.lgbm.pipeline import LgbmPipeline
 from src.model.xgbm.pipeline import XgbPipeline
 from src.model.ctb.pipeline import CtbPipeline
+from src.utils.import_utils import import_params
 
 class EnsembleInit(EnsembleInit):
     def __init__(self, 
@@ -124,7 +125,6 @@ class EnsembleInit(EnsembleInit):
     
     def load_model(self) -> None:
         if 'lgb' in self.params_ensemble['model']:
-            from src.utils.import_utils import import_params
             from src.model.lgbm.pipeline import LgbmPipeline
         
             params_model, experiment_name = import_params(model='lgb')
@@ -139,7 +139,6 @@ class EnsembleInit(EnsembleInit):
             
             
         if 'xgb' in self.params_ensemble['model']:
-            from src.utils.import_utils import import_params
             from src.model.xgbm.pipeline import XgbPipeline
         
             params_model, experiment_name = import_params(model='xgb')
@@ -154,7 +153,6 @@ class EnsembleInit(EnsembleInit):
             self.pipeline_model_list.append(xgb_model)
 
         if 'ctb' in self.params_ensemble['model']:
-            from src.utils.import_utils import import_params
             from src.model.ctb.pipeline import CtbPipeline
         
             params_model, experiment_name = import_params(model='ctb')
