@@ -4,6 +4,7 @@ import xgboost as xgb
 
 from typing import Tuple
 from sklearn.metrics import cohen_kappa_score
+# from pytorch_tabnet.metrics import Metric
 
 from src.utils.import_utils import import_config
 
@@ -27,6 +28,19 @@ def quadratic_weighted_kappa_tresh(combination: list[float], y_true: np.ndarray,
     )
     
     return quadratic_weighted_kappa(y_true, rounded_prediciton_)
+
+# class QKappaTabnet(Metric):
+#     def __init__(self):
+#         self._name = "q_kappa"
+#         self._maximize = True
+
+#     def __call__(self, y_true, y_score):
+#         # it run metric also on test for detector. needed to round for pseudo-labeling
+#         y_true = y_true.round().astype(int)
+#         y_score = y_score.round().astype(int)
+
+#         eval_result = quadratic_weighted_kappa_tresh([0.5, 1.4, 2], y_true=y_true, y_pred=y_score)
+#         return eval_result
 
 class QuadraticKappa():         
     def is_max_optimal(self):
