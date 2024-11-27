@@ -16,3 +16,4 @@ scikit-learn
 shap
 tabulate
 catboost
+pytorch_tabnet
